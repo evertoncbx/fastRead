@@ -58,26 +58,37 @@ O usuário acessa o aplicativo diariamente e cumpre 5 passos progressivos:
 
 ---
 
-## 🚀 Como Executar Localmente
+## 🚀 Como Executar Localmente e Testar
 
 ```bash
 # 1. Instalar as dependências
 npm install
 
-# 2. Iniciar o servidor de desenvolvimento
+# 2. Executar testes automatizados (10 testes cobrindo ORP, WPM, Quizzes e Streak)
+npm test
+
+# 3. Iniciar o servidor de desenvolvimento
 npm run dev
 
-# 3. Compilar para produção
+# 4. Compilar para produção
 npm run build
+
+# 5. Visualizar o bundle de produção localmente
+npm run preview
 ```
 
 ---
 
 ## 🌐 Deploy na Vercel
 
-1. Suba o repositório no seu GitHub.
-2. Na Vercel, importe o repositório.
-3. Defina as seguintes variáveis de ambiente (se desejar sincronizar com o Supabase):
+O aplicativo possui build validado e deploy executado na Vercel:
+- **Deploy Ativo:** [https://flying-eclipse-ryaf1c5.tmp.now](https://flying-eclipse-ryaf1c5.tmp.now)
+- **Claim URL:** [https://vercel.com/claim-deployment?code=2b406db5-d746-4232-9558-458fbf3ef46d](https://vercel.com/claim-deployment?code=2b406db5-d746-4232-9558-458fbf3ef46d)
+
+### Integração Contínua com GitHub + Vercel
+1. O repositório está sincronizado em [https://github.com/evertoncbx/fastRead](https://github.com/evertoncbx/fastRead).
+2. Na Vercel, conecte sua conta do GitHub e importe o repositório `fastRead`.
+3. Defina as seguintes variáveis de ambiente (se desejar sincronizar com o Supabase além do armazenamento local):
    - `VITE_SUPABASE_URL`: URL do seu projeto Supabase
    - `VITE_SUPABASE_ANON_KEY`: Anon Public Key do Supabase
-4. Conclua o deploy. O aplicativo estará imediatamente disponível globalmente.
+4. O deploy de produção será atualizado automaticamente a cada commit na branch `main`.

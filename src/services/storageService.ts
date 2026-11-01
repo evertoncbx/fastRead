@@ -26,7 +26,24 @@ export const storage = {
     try {
       const data = localStorage.getItem(USER_KEY);
       if (!data) return null;
-      return JSON.parse(data) as UserProfile;
+      const user = JSON.parse(data) as UserProfile;
+
+      // Se o usuário ficou inativo por mais de 1 dia (não acessou hoje nem ontem), reseta a sequência honestamente
+      if (user.lastActiveDate) {
+        const todayStr = this.getTodayDateString();
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+        if (user.lastActiveDate !== todayStr && user.lastActiveDate !== yesterdayStr) {
+          if (user.streakDays > 0) {
+            user.streakDays = 0;
+            localStorage.setItem(USER_KEY, JSON.stringify(user));
+          }
+        }
+      }
+
+      return user;
     } catch {
       return null;
     }

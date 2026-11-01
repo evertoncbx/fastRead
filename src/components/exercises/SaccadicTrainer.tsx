@@ -52,9 +52,7 @@ export const SaccadicTrainer: React.FC<SaccadicTrainerProps> = ({ onComplete, on
             spread: 50,
             origin: { y: 0.6 }
           });
-          if (onComplete) {
-            onComplete(400, 2);
-          }
+          // onComplete é acionado pelo botão Continuar no overlay!
         }
         return next;
       });

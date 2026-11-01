@@ -41,6 +41,7 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
 
   const timerRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
+  const readingDurationRef = useRef<number>(0);
 
   useEffect(() => {
     return () => {
@@ -51,6 +52,7 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
   const handleStartReading = () => {
     setPhase('reading');
     setElapsedSeconds(0);
+    readingDurationRef.current = 0;
     startTimeRef.current = performance.now();
     timerRef.current = window.setInterval(() => {
       const now = performance.now();
@@ -60,10 +62,13 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
 
   const handleFinishReading = () => {
     if (timerRef.current) clearInterval(timerRef.current);
-    const finalSeconds = (performance.now() - startTimeRef.current) / 1000;
+    const rawSeconds = (performance.now() - startTimeRef.current) / 1000;
+    // Evita tempos irreais mínimos para impedir WPMs inflados por cliques acidentais
+    const finalSeconds = Math.max(3, rawSeconds);
+    readingDurationRef.current = finalSeconds;
     setElapsedSeconds(finalSeconds);
 
-    const calculatedWpm = Math.max(50, Math.round((text.wordCount / finalSeconds) * 60));
+    const calculatedWpm = Math.min(1500, Math.max(50, Math.round((text.wordCount / finalSeconds) * 60)));
 
     if (text.quiz && text.quiz.length > 0) {
       setPhase('quiz');
@@ -94,8 +99,9 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
         }
       });
       const compPercent = Math.round((correct / text.quiz.length) * 100);
-      const calculatedWpm = Math.max(50, Math.round((text.wordCount / elapsedSeconds) * 60));
-      finalizeResults(calculatedWpm, compPercent, elapsedSeconds);
+      const readSeconds = readingDurationRef.current > 0 ? readingDurationRef.current : Math.max(3, elapsedSeconds);
+      const calculatedWpm = Math.min(1500, Math.max(50, Math.round((text.wordCount / readSeconds) * 60)));
+      finalizeResults(calculatedWpm, compPercent, readSeconds);
     }
   };
 
@@ -332,6 +338,45 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
               )}
             </div>
           </div>
+
+          {/* Gabarito e Revisão de Retenção */}
+          {text.quiz && text.quiz.length > 0 && (
+            <div className="bg-slate-900 border border-slate-800 p-4 rounded-3xl text-left space-y-3">
+              <span className="text-[11px] uppercase tracking-wider text-indigo-400 font-bold block">
+                Gabarito Comentado & Justificativas
+              </span>
+              <div className="space-y-2.5">
+                {text.quiz.map((q, idx) => {
+                  const userAns = answers[q.id];
+                  const isCorrect = userAns === q.correctIndex;
+
+                  return (
+                    <div key={q.id} className="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80 text-xs space-y-1.5">
+                      <div className="flex items-start gap-2 font-semibold text-slate-200">
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold shrink-0 mt-0.5 ${
+                          isCorrect ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
+                        }`}>
+                          {isCorrect ? '✓ Correto' : '✗ Incorreto'}
+                        </span>
+                        <span>{idx + 1}. {q.question}</span>
+                      </div>
+                      {!isCorrect && userAns !== undefined && (
+                        <p className="text-[11px] text-rose-300 pl-2">
+                          Sua escolha: <span className="line-through">{q.options[userAns]}</span>
+                        </p>
+                      )}
+                      <p className="text-[11px] text-emerald-400 pl-2 font-medium">
+                        Resposta certa: {q.options[q.correctIndex]}
+                      </p>
+                      <p className="text-[11px] text-slate-400 italic pl-2 border-l-2 border-indigo-500/40 mt-1">
+                        {q.explanation}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <button
             onClick={() => {

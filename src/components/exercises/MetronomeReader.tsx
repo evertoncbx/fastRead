@@ -2,16 +2,31 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, ArrowLeft, Clock, Zap, CheckCircle2, BookOpen } from 'lucide-react';
 import { audio } from '../../services/audioService';
 import { READING_LIBRARY } from '../../data/texts';
+import { ReadingText } from '../../types';
 import confetti from 'canvas-confetti';
 
 interface MetronomeReaderProps {
+  customText?: ReadingText;
   onComplete?: (wpm: number, durationMinutes: number) => void;
   onBack?: () => void;
   isDailyStep?: boolean;
 }
 
-export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ onComplete, onBack, isDailyStep }) => {
-  const [selectedTextIndex, setSelectedTextIndex] = useState<number>(0);
+export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, onComplete, onBack, isDailyStep }) => {
+  const availableTexts = useMemo(() => {
+    if (customText && !READING_LIBRARY.some(t => t.id === customText.id)) {
+      return [customText, ...READING_LIBRARY];
+    }
+    return READING_LIBRARY;
+  }, [customText]);
+
+  const [selectedTextIndex, setSelectedTextIndex] = useState<number>(() => {
+    if (customText) {
+      const idx = READING_LIBRARY.findIndex(t => t.id === customText.id);
+      return idx >= 0 ? idx : 0;
+    }
+    return 0;
+  });
   const [bpm, setBpm] = useState<number>(200); // 120 a 380 BPM
   const [wordsPerBeat, setWordsPerBeat] = useState<number>(1); // 1 ou 2 palavras por batida
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
@@ -23,7 +38,7 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ onComplete, on
   const [remainingSeconds, setRemainingSeconds] = useState<number>(180);
   const [soundOn, setSoundOn] = useState<boolean>(audio.isEnabled());
 
-  const currentText = READING_LIBRARY[selectedTextIndex];
+  const currentText = availableTexts[selectedTextIndex] || availableTexts[0];
   
   // Dividir o texto em palavras
   const words = useMemo(() => {
@@ -121,9 +136,7 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ onComplete, on
       spread: 60,
       origin: { y: 0.6 }
     });
-    if (onComplete) {
-      onComplete(calculatedWpm, Math.round((sessionSeconds - remainingSeconds) / 60) || 1);
-    }
+    // onComplete é acionado pelo botão Concluir Exercício no overlay para o usuário ver seus resultados!
   };
 
   const toggleSound = () => {
@@ -202,7 +215,7 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ onComplete, on
           }}
           className="w-full bg-slate-950 border border-slate-700/80 rounded-lg py-1.5 px-3 text-xs text-slate-200 font-medium focus:outline-none focus:border-indigo-500"
         >
-          {READING_LIBRARY.map((item, idx) => (
+          {availableTexts.map((item, idx) => (
             <option key={item.id} value={idx}>
               {item.title} ({item.author})
             </option>
@@ -275,7 +288,7 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ onComplete, on
       <div className="relative bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden mb-4 flex-1 min-h-[220px] max-h-[320px] flex flex-col">
         <div
           ref={wordsContainerRef}
-          className="p-4 overflow-y-auto leading-relaxed text-sm md:text-base font-sans select-none space-x-1 space-y-1"
+          className="relative p-4 overflow-y-auto leading-relaxed text-sm md:text-base font-sans select-none space-x-1 space-y-1"
         >
           {words.map((word, idx) => {
             const isCurrent = idx >= currentIndex && idx < currentIndex + wordsPerBeat;
@@ -313,7 +326,7 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ onComplete, on
             </div>
             {onComplete && (
               <button
-                onClick={() => onComplete(calculatedWpm, 3)}
+                onClick={() => onComplete(calculatedWpm, Math.max(1, Math.round((sessionSeconds - remainingSeconds) / 60)))}
                 className="py-2.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-600/30 transition-all"
               >
                 <CheckCircle2 className="w-4 h-4" />

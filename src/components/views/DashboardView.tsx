@@ -27,6 +27,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="space-y-4 p-4 pb-24 max-w-lg mx-auto text-slate-100">
+      {/* Banner de Teste Diagnóstico Pendente se baselineWpm == 0 */}
+      {(!user.initialTestCompleted || user.baselineWpm === 0) && (
+        <div className="bg-gradient-to-r from-amber-500/20 to-indigo-500/20 border border-amber-500/40 p-4 rounded-2xl flex items-center justify-between gap-3 shadow-lg">
+          <div>
+            <h4 className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+              <span>⚠️ Teste Diagnóstico Pendente</span>
+            </h4>
+            <p className="text-[11px] text-slate-300 mt-0.5">
+              Calibre sua velocidade inicial em um teste cronometrado de 2 min para definir sua meta de +50%.
+            </p>
+          </div>
+          <button
+            onClick={onRetest}
+            className="py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs whitespace-nowrap shrink-0 shadow-md transition-all"
+          >
+            Fazer Agora
+          </button>
+        </div>
+      )}
+
       {/* Card da Meta de +50% de Velocidade */}
       <div className="relative bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-900 border border-indigo-500/30 rounded-3xl p-5 shadow-2xl overflow-hidden">
         {/* Glow */}

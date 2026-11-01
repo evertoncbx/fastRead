@@ -214,6 +214,7 @@ export const App: React.FC = () => {
 
             {activeExercise.type === 'metronome' && (
               <MetronomeReader
+                customText={activeExercise.customText}
                 isDailyStep={activeExercise.isDailyStep}
                 onBack={() => setActiveExercise(null)}
                 onComplete={(wpm, durMin) => {
@@ -229,6 +230,7 @@ export const App: React.FC = () => {
 
             {activeExercise.type === 'rsvp' && (
               <RSVPReader
+                customText={activeExercise.customText}
                 isDailyStep={activeExercise.isDailyStep}
                 onBack={() => setActiveExercise(null)}
                 onComplete={(wpm, durMin) => {
@@ -244,6 +246,7 @@ export const App: React.FC = () => {
 
             {activeExercise.type === 'chunking' && (
               <ChunkingTrainer
+                customText={activeExercise.customText}
                 isDailyStep={activeExercise.isDailyStep}
                 onBack={() => setActiveExercise(null)}
                 onComplete={(wpm, durMin) => {

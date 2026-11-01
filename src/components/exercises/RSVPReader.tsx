@@ -2,23 +2,39 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Play, Pause, RotateCcw, FastForward, Rewind, Volume2, VolumeX, ArrowLeft, Zap, BookOpen, CheckCircle2 } from 'lucide-react';
 import { audio } from '../../services/audioService';
 import { READING_LIBRARY } from '../../data/texts';
+import { ReadingText } from '../../types';
 import confetti from 'canvas-confetti';
 
 interface RSVPReaderProps {
+  customText?: ReadingText;
   onComplete?: (wpm: number, durationMinutes: number) => void;
   onBack?: () => void;
   isDailyStep?: boolean;
 }
 
-export const RSVPReader: React.FC<RSVPReaderProps> = ({ onComplete, onBack, isDailyStep }) => {
-  const [selectedTextIndex, setSelectedTextIndex] = useState<number>(2); // Padrão: Machado de Assis
+export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, onBack, isDailyStep }) => {
+  const availableTexts = useMemo(() => {
+    if (customText && !READING_LIBRARY.some(t => t.id === customText.id)) {
+      return [customText, ...READING_LIBRARY];
+    }
+    return READING_LIBRARY;
+  }, [customText]);
+
+  const [selectedTextIndex, setSelectedTextIndex] = useState<number>(() => {
+    if (customText) {
+      const foundIdx = READING_LIBRARY.findIndex(t => t.id === customText.id);
+      return foundIdx >= 0 ? foundIdx : 0;
+    }
+    return 2; // Padrão: Machado de Assis
+  });
+
   const [wpm, setWpm] = useState<number>(350); // 200 a 800 PPM
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [isFinished, setIsFinished] = useState<boolean>(false);
-  const [soundOn, setSoundOn] = useState<boolean>(false); // RSVP sound is off by default to avoid sensory overload
+  const [soundOn, setSoundOn] = useState<boolean>(false);
 
-  const currentText = READING_LIBRARY[selectedTextIndex];
+  const currentText = availableTexts[selectedTextIndex] || availableTexts[0];
 
   // Tokenizar palavras mantendo pontuações
   const words = useMemo(() => {
@@ -26,6 +42,12 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ onComplete, onBack, isDa
   }, [currentText]);
 
   const timerRef = useRef<number | null>(null);
+  const wpmRef = useRef(wpm);
+  wpmRef.current = wpm;
+  const soundOnRef = useRef(soundOn);
+  soundOnRef.current = soundOn;
+  const wordsRef = useRef(words);
+  wordsRef.current = words;
 
   // Calcula o Ponto Ótimo de Reconhecimento (ORP - Optimal Recognition Point)
   // A ciência cognitiva aponta que a fixação ideal é entre 30% a 35% do comprimento da palavra
@@ -42,7 +64,7 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ onComplete, onBack, isDa
     if (len <= 5) orpIndex = 1;
     else if (len <= 9) orpIndex = 2;
     else if (len <= 13) orpIndex = 3;
-    else orpIndex = 4;
+    else orpIndex = Math.min(len - 1, 4);
 
     return {
       prefix: word.substring(0, orpIndex),
@@ -51,15 +73,15 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ onComplete, onBack, isDa
     };
   }, [words, currentIndex]);
 
-  // Tempo base por palavra em ms: (60 / wpm) * 1000
+  // Tempo base por palavra em ms: (60 / wpm) * 1000 usando ref para mudanças dinâmicas
   const getWordDelay = (word: string) => {
-    const baseDelay = (60 / wpm) * 1000;
+    const baseDelay = (60 / wpmRef.current) * 1000;
     // Pausa levemente maior para pontuações para respeitar o processamento sintático
     if (/[.?!]$/.test(word)) {
-      return baseDelay * 1.6;
+      return baseDelay * 1.5;
     }
     if (/[,;:]$/.test(word)) {
-      return baseDelay * 1.3;
+      return baseDelay * 1.25;
     }
     return baseDelay;
   };
@@ -71,7 +93,8 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ onComplete, onBack, isDa
   }, []);
 
   const scheduleNextWord = (nextIndex: number) => {
-    if (nextIndex >= words.length) {
+    const currentWords = wordsRef.current;
+    if (nextIndex >= currentWords.length) {
       setIsPlaying(false);
       setIsFinished(true);
       audio.playSuccess();
@@ -80,29 +103,42 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ onComplete, onBack, isDa
         spread: 60,
         origin: { y: 0.6 }
       });
-      if (onComplete) {
-        onComplete(wpm, Math.max(1, Math.round(words.length / wpm)));
-      }
+      // onComplete é acionado pelo botão no overlay de resultado
       return;
     }
 
-    const currentWord = words[nextIndex] || '';
+    const currentWord = currentWords[nextIndex] || '';
     const delay = getWordDelay(currentWord);
 
     timerRef.current = window.setTimeout(() => {
-      if (soundOn) audio.playClick();
+      if (soundOnRef.current) audio.playClick();
       setCurrentIndex(nextIndex);
       scheduleNextWord(nextIndex + 1);
     }, delay);
   };
 
   const handlePlay = () => {
-    if (currentIndex >= words.length - 1) {
+    let startIdx = currentIndex;
+    if (startIdx >= words.length - 1) {
+      startIdx = 0;
       setCurrentIndex(0);
     }
     setIsPlaying(true);
     setIsFinished(false);
-    scheduleNextWord(currentIndex);
+
+    // O índice startIdx já está na tela; agenda o próximo avanço com o delay correto
+    const currentWord = words[startIdx] || '';
+    const delay = getWordDelay(currentWord);
+    timerRef.current = window.setTimeout(() => {
+      if (soundOnRef.current) audio.playClick();
+      const nextIdx = startIdx + 1;
+      if (nextIdx < words.length) {
+        setCurrentIndex(nextIdx);
+        scheduleNextWord(nextIdx + 1);
+      } else {
+        scheduleNextWord(nextIdx);
+      }
+    }, delay);
   };
 
   const handlePause = () => {
@@ -196,7 +232,7 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ onComplete, onBack, isDa
           }}
           className="w-full bg-slate-950 border border-slate-700/80 rounded-lg py-1.5 px-3 text-xs text-slate-200 font-medium focus:outline-none focus:border-indigo-500"
         >
-          {READING_LIBRARY.map((item, idx) => (
+          {availableTexts.map((item, idx) => (
             <option key={item.id} value={idx}>
               {item.title} — {item.author} ({item.wordCount} palavras)
             </option>

@@ -1,23 +1,38 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Play, Pause, RotateCcw, ArrowLeft, Layers, Zap, BookOpen, CheckCircle2 } from 'lucide-react';
 import { READING_LIBRARY } from '../../data/texts';
+import { ReadingText } from '../../types';
 import confetti from 'canvas-confetti';
 
 interface ChunkingTrainerProps {
+  customText?: ReadingText;
   onComplete?: (wpm: number, durationMinutes: number) => void;
   onBack?: () => void;
   isDailyStep?: boolean;
 }
 
-export const ChunkingTrainer: React.FC<ChunkingTrainerProps> = ({ onComplete, onBack, isDailyStep }) => {
-  const [selectedTextIndex, setSelectedTextIndex] = useState<number>(3);
+export const ChunkingTrainer: React.FC<ChunkingTrainerProps> = ({ customText, onComplete, onBack, isDailyStep }) => {
+  const availableTexts = useMemo(() => {
+    if (customText && !READING_LIBRARY.some(t => t.id === customText.id)) {
+      return [customText, ...READING_LIBRARY];
+    }
+    return READING_LIBRARY;
+  }, [customText]);
+
+  const [selectedTextIndex, setSelectedTextIndex] = useState<number>(() => {
+    if (customText) {
+      const idx = READING_LIBRARY.findIndex(t => t.id === customText.id);
+      return idx >= 0 ? idx : 0;
+    }
+    return 3;
+  });
   const [chunkSize, setChunkSize] = useState<number>(3); // 2, 3 ou 4 palavras por fixação
   const [wpm, setWpm] = useState<number>(300);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentChunkIndex, setCurrentChunkIndex] = useState<number>(0);
   const [isFinished, setIsFinished] = useState<boolean>(false);
 
-  const currentText = READING_LIBRARY[selectedTextIndex];
+  const currentText = availableTexts[selectedTextIndex] || availableTexts[0];
 
   // Agrupar palavras do texto em blocos de tamanho chunkSize
   const chunks = useMemo(() => {
@@ -73,9 +88,7 @@ export const ChunkingTrainer: React.FC<ChunkingTrainerProps> = ({ onComplete, on
             spread: 60,
             origin: { y: 0.6 }
           });
-          if (onComplete) {
-            onComplete(wpm, Math.max(1, Math.round((chunks.length * chunkSize) / wpm)));
-          }
+          // onComplete é acionado pelo botão Continuar no overlay de resultado!
           return chunks.length - 1;
         }
         return next;
@@ -148,7 +161,7 @@ export const ChunkingTrainer: React.FC<ChunkingTrainerProps> = ({ onComplete, on
           }}
           className="w-full bg-slate-950 border border-slate-700/80 rounded-lg py-1.5 px-3 text-xs text-slate-200 font-medium focus:outline-none focus:border-indigo-500"
         >
-          {READING_LIBRARY.map((item, idx) => (
+          {availableTexts.map((item, idx) => (
             <option key={item.id} value={idx}>
               {item.title} ({item.author})
             </option>

@@ -84,9 +84,7 @@ export const SchulteTable: React.FC<SchulteTableProps> = ({ onComplete, onBack, 
           spread: 60,
           origin: { y: 0.6 }
         });
-        if (onComplete) {
-          onComplete(Number(finalTime.toFixed(2)));
-        }
+        // onComplete será acionado pelo botão 'Avançar' no overlay de vitória!
       } else {
         setCurrentExpected(prev => prev + 1);
       }

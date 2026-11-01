@@ -5,17 +5,30 @@
 @layer base {
   html {
     -webkit-tap-highlight-color: transparent;
+    background-color: #131211;
+    color: #f3efe8;
   }
   
   body {
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    background-color: #131211;
+    color: #f3efe8;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
   }
 }
 
-/* Custom scrollbar for mobile */
+/* Tipografia de Leitura Focada (Editorial Comfort) */
+.font-reading {
+  font-family: 'Charter', 'Georgia', 'Cambria', serif;
+  line-height: 1.8;
+  letter-spacing: 0.01em;
+}
+
+/* Custom scrollbar para ambiente de leitura */
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -23,10 +36,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.2);
+  background: rgba(163, 155, 142, 0.25);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.4);
+  background: rgba(163, 155, 142, 0.45);
 }

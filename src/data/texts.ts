@@ -2,10 +2,10 @@ import { ReadingText } from '../types';
 
 export const INITIAL_DIAGNOSTIC_TEXT: ReadingText = {
   id: 'diag-01',
-  title: 'Teste Diagnóstico: A Mecânica da Mente Leitora',
-  author: 'Domínio Público / Adaptado para Nivelamento',
+  title: 'Teste Diagnóstico 1: A Mecânica da Mente Leitora',
+  author: 'Artigo Científico / Nivelamento Cognitivo',
   category: 'artigo',
-  description: 'Texto padrão para medir sua velocidade de leitura inicial (PPM) e sua capacidade natural de retenção.',
+  description: 'Texto clássico para medir sua velocidade de leitura inicial (PPM) e sua capacidade natural de retenção.',
   wordCount: 312,
   estimatedMinutes: 2,
   text: `A leitura é uma das invenções mais extraordinárias da humanidade, permitindo que mentes separadas por séculos e oceanos se comuniquem com precisão. No entanto, a maioria das pessoas lê exatamente da mesma maneira que aprendeu na infância: decodificando sílaba por sílaba e pronunciando mentalmente cada palavra em uma voz interior. Esse hábito é conhecido pelos neurocientistas como subvocalização.
@@ -69,8 +69,8 @@ Dominar técnicas de leitura dinâmica não significa folhear páginas apressada
 
 export const PERIODIC_ASSESSMENT_TEXT: ReadingText = {
   id: 'diag-02',
-  title: 'Teste de Aferição (+50%): A Atenção Focada e o Ritmo Cognitivo',
-  author: 'Domínio Público / Avaliação de Evolução',
+  title: 'Teste Diagnóstico 2: A Atenção Focada e o Ritmo Cognitivo',
+  author: 'Neurociência Aplicada / Avaliação de Evolução',
   category: 'artigo',
   description: 'Avalie sua velocidade atual e verifique se você atingiu a meta de aumento de 50% em relação ao teste inicial.',
   wordCount: 326,
@@ -122,9 +122,244 @@ Atingir cinquenta por cento a mais de velocidade representa muito mais do que ec
   ]
 };
 
+export const DIAGNOSTIC_TEXT_3: ReadingText = {
+  id: 'diag-03',
+  title: 'Teste Diagnóstico 3: O Homem que Sabia Javanês',
+  author: 'Lima Barreto',
+  category: 'conto',
+  description: 'Uma sátira brilhante da sociedade carioca sobre a erudição aparente, astúcia e domínio da linguagem.',
+  wordCount: 345,
+  estimatedMinutes: 2,
+  text: `Castelo olhou para mim com um ar triunfante e confidenciou-me o seu segredo. O homem vivia na mais completa penúria até que deparou com um anúncio de jornal: precisava-se de alguém que soubesse a língua javanesa para traduzir manuscritos antigos e dar aulas a um nobre barão aposentado. Nenhum habitante da cidade, como era de se esperar, dominava tão exótico dialeto das ilhas do oriente.
+
+Sem pestanejar, Castelo dirigiu-se à Biblioteca Nacional. Consultou dicionários filológicos, decorou o alfabeto básico, o nome de uma dezena de reis lendários e aprendeu meia dúzia de saudações e adjetivos cerimoniais. Com essa parca bagagem e uma solenidade inabalável no semblante, apresentou-se no solar do barão.
+
+O ancião, quase cego e sedento de glória literária, ficou maravilhado com a pronúncia gutural do jovem mestre. A cada lição, Castelo inventava regras gramaticais na hora, declamava versos estapafúrdios e recebia generosas quantias em ouro. Em poucos meses, o falso sábio era aclamado pela imprensa, convidado para conferências internacionais e finalmente nomeado cônsul da república.
+
+A narrativa de Lima Barreto expõe com humor ferino a fragilidade das aparências e o fascínio das elites pelo rebuscado sem substância. Na leitura dinâmica, o desafio é análogo: precisamos penetrar a carcaça formal das frases com rapidez cirúrgica, extraindo a essência do pensamento antes que os ornamentos verbais nos desviem da verdade.`,
+  quiz: [
+    {
+      id: 'd3-1',
+      question: 'O que motivou Castelo a inventar que sabia javanês?',
+      options: [
+        'Uma aposta feita com amigos de faculdade',
+        'Um anúncio de jornal que procurava um tradutor de manuscritos para um barão',
+        'Um concurso público para a diplomacia em Paris',
+        'O desejo de fugir da polícia do Rio de Janeiro'
+      ],
+      correctIndex: 1,
+      explanation: 'Ele viu um anúncio de jornal buscando alguém que dominasse o idioma javanês para atender a um velho barão.'
+    },
+    {
+      id: 'd3-2',
+      question: 'Como Castelo se preparou antes de se apresentar ao barão?',
+      options: [
+        'Viajou para a Ásia e passou anos estudando em Java',
+        'Contratou um marinheiro estrangeiro no porto',
+        'Foi à Biblioteca Nacional, decorou o alfabeto, nomes de reis e poucas saudações',
+        'Comprou uma coleção completa de enciclopédias inglesas'
+      ],
+      correctIndex: 2,
+      explanation: 'Ele consultou a Biblioteca Nacional, decorou algumas saudações, o alfabeto e nomes de reis na véspera da entrevista.'
+    },
+    {
+      id: 'd3-3',
+      question: 'Qual é a crítica central feita por Lima Barreto por meio desse conto?',
+      options: [
+        'A dificuldade de aprender línguas orientais',
+        'A falta de livros didáticos nas escolas públicas',
+        'A fragilidade das aparências e a facilidade com que a sociedade se impressiona com erudição superficial',
+        'A necessidade de fechar a Biblioteca Nacional'
+      ],
+      correctIndex: 2,
+      explanation: 'Lima Barreto ironiza as aparências sociais e o apreço por títulos vazios sem conhecimento real.'
+    }
+  ]
+};
+
+export const DIAGNOSTIC_TEXT_4: ReadingText = {
+  id: 'diag-04',
+  title: 'Teste Diagnóstico 4: Gutenberg e a Revolução da Memória',
+  author: 'História do Livro e da Mente / Ensaio Cultural',
+  category: 'artigo',
+  description: 'Como a invenção da prensa de tipos móveis transformou para sempre a arquitetura cognitiva humana.',
+  wordCount: 338,
+  estimatedMinutes: 2,
+  text: `Antes de Johannes Gutenberg aperfeiçoar os tipos móveis metálicos em meados do século quinze na Alemanha, cada volume literário era uma obra artesanal caríssima. Monges copistas passavam anos debruçados sobre velinos e pergaminhos, iluminando capitulares à luz de velas. Uma biblioteca com trinta códices representava fortuna comparável a propriedades rurais inteiras.
+
+A prensa mecânica produziu um abalo sísmico na cognição ocidental. Ao baratear a produção e permitir tiragens idênticas em larga escala, libertou a memória individual do fardo da pura retenção oral. Até então, quem quisesse conservar uma epopeia ou tratado de botânica precisava memorizá-lo verso por verso. Com o livro impresso e portátil, a mente humana pôde terceirizar o depósito de dados e redirecionar sua energia criativa para a análise crítica, a comparação de hipóteses e a síntese inovadora.
+
+Contudo, essa abundância trouxe novos desafios perceptivos. Pela primeira vez na história, o ser humano deparou-se com mais textos do que seria capaz de ler durante a existência inteira. Essa sobrecarga informacional exigiu o desenvolvimento de novas habilidades visuais: índices remissivos, leitura diagonal e métodos para escanear parágrafos à procura de ideias centrais.
+
+Hoje, em meio à torrente digital de telas e hipertextos, o treinamento de leitura dinâmica atualiza essa mesma demanda ancestral. Acelerar o olhar sem perder a profundidade é a chave contemporânea para não nos afogarmos no oceano de palavras que Gutenberg começou a jorrar.`,
+  quiz: [
+    {
+      id: 'd4-1',
+      question: 'Como eram reproduzidos os livros antes da invenção da prensa de tipos móveis por Gutenberg?',
+      options: [
+        'Por meio de máquinas a vapor primitivas',
+        'Eram impressos com blocos de madeira japoneses em oficinas estatais',
+        'Copiados à mão individualmente por monges copistas em pergaminhos ao longo de anos',
+        'Ditados em praça pública e gravados em tábuas de argila'
+      ],
+      correctIndex: 2,
+      explanation: 'Os textos eram copiados manualmente um a um por monges copistas em velino e pergaminho.'
+    },
+    {
+      id: 'd4-2',
+      question: 'Segundo o ensaio, qual foi o maior benefício cognitivo proporcionado pelo livro impresso?',
+      options: [
+        'Aumentou a necessidade de memorização palavra por palavra',
+        'Liberou a mente humana do fardo da retenção mnemônica, permitindo focar na análise crítica e comparação',
+        'Eliminou totalmente os erros de tradução em todas as obras',
+        'Fez com que as bibliotecas deixassem de existir'
+      ],
+      correctIndex: 1,
+      explanation: 'O livro impresso permitiu terceirizar a memória bruta e redirecionar a cognição para o pensamento crítico.'
+    },
+    {
+      id: 'd4-3',
+      question: 'Qual novo desafio surgiu com a imensa abundância de livros gerada pela imprensa?',
+      options: [
+        'A perda da visão de todos os leitores europeus',
+        'A escassez total de papel celulose no século dezesseis',
+        'A sobrecarga de informações, exigindo novas habilidades para escanear e selecionar o essencial',
+        'O cancelamento das feiras internacionais de livros'
+      ],
+      correctIndex: 2,
+      explanation: 'Com mais textos disponíveis do que uma vida permite ler, surgiram a leitura seletiva, índices e escaneamento visual.'
+    }
+  ]
+};
+
+export const DIAGNOSTIC_TEXT_5: ReadingText = {
+  id: 'diag-05',
+  title: 'Teste Diagnóstico 5: Plasticidade Cerebral e o Estado de Fluxo',
+  author: 'Psicologia Cognitiva & Performance Mental',
+  category: 'artigo',
+  description: 'A ciência de entrar na zona de foco imersivo durante a leitura e reprogramar conexões sinápticas.',
+  wordCount: 330,
+  estimatedMinutes: 2,
+  text: `O conceito de neuroplasticidade revolucionou nossa compreensão sobre o cérebro adulto. Durante décadas, acreditou-se que após a juventude os circuitos neurais tornavam-se imutáveis e rígidos. Hoje sabemos que toda prática intencional de alta intensidade remodela as trilhas dendríticas, construindo novas pontes sinápticas e acelerando a mielinização dos axônios envolvidos na tarefa.
+
+Na leitura, essa maleabilidade orgânica manifesta-se com particular intensidade quando o indivíduo atinge o chamado "estado de fluxo" ou flow. Esse estado psicológico ótimo, amplamente mapeado pelo pesquisador Mihaly Csikszentmihalyi, ocorre quando o nível de desafio de uma atividade equilibra-se perfeitamente com a habilidade do praticante.
+
+Quando lemos abaixo da nossa capacidade real de processamento, a baixa demanda cognitiva induz o cérebro à monotonia e ao devaneio. Os neurônios da rede de modo padrão (Default Mode Network) ativam-se, puxando a mente para preocupações periféricas, listas de tarefas ou memórias desconexas. Ao contrário, quando aumentamos a velocidade em cinquenta por cento com exercícios rítmicos, o córtex pré-frontal precisa mobilizar todos os seus recursos de foco executivo.
+
+Essa mobilização maciça silencia os ruídos internos. A consciência funde-se com as palavras, o tempo cronológico parece desacelerar e a retenção conceitual sobe exponencialmente. Ler com técnica não é pressa desajeitada, mas sim um mergulho intencional na zona de máxima eficiência cerebral.`,
+  quiz: [
+    {
+      id: 'd5-1',
+      question: 'O que a descoberta da neuroplasticidade comprovou sobre o cérebro humano adulto?',
+      options: [
+        'Que o cérebro deixa de aprender totalmente após os vinte anos',
+        'Que práticas intencionais e intensas são capazes de remodelar circuitos sinápticos e acelerar conexões em qualquer idade',
+        'Que a leitura rápida causa perda de neurônios no lobo frontal',
+        'Que as habilidades intelectuais dependem exclusivamente da genética'
+      ],
+      correctIndex: 1,
+      explanation: 'A neuroplasticidade provou que o cérebro adulto se remodela continuamente por meio de práticas intencionais.'
+    },
+    {
+      id: 'd5-2',
+      question: 'Por que ler muito devagar frequentemente causa desatenção e devaneio mental?',
+      options: [
+        'Porque a luz da sala cansa o nervo óptico',
+        'Porque a baixa exigência cognitiva ativa a rede de modo padrão, levando a mente a pensamentos paralelos',
+        'Porque o corpo fica desidratado após três minutos',
+        'Porque as palavras perdem o sentido gramatical'
+      ],
+      correctIndex: 1,
+      explanation: 'A subutilização da capacidade cognitiva aciona o Default Mode Network, provocando divagações cotidianas.'
+    },
+    {
+      id: 'd5-3',
+      question: 'Qual é o efeito do aumento de velocidade na atividade do córtex pré-frontal?',
+      options: [
+        'Desativa a memória de longo prazo',
+        'Obriga a mobilização plena dos recursos de foco executivo, silenciando ruídos internos e aprofundando o fluxo',
+        'Provoca sono imediato no leitor',
+        'Reduz a taxa de oxigênio no sangue'
+      ],
+      correctIndex: 1,
+      explanation: 'O desafio cognitivo calibrado exige foco total do córtex pré-frontal, eliminando distrações e ruídos internos.'
+    }
+  ]
+};
+
+export const DIAGNOSTIC_TEXT_6: ReadingText = {
+  id: 'diag-06',
+  title: 'Teste Diagnóstico 6: Cinco Minutos (O Encontro Inusitado)',
+  author: 'José de Alencar',
+  category: 'conto',
+  description: 'Um clássico do romantismo brasileiro onde um atraso no ônibus da corte desencadeia uma trama cheia de charme e mistério.',
+  wordCount: 352,
+  estimatedMinutes: 2,
+  text: `Tinham dado cinco horas no relógio da Carioca quando cheguei ao largo do Paço para tomar o ônibus que me devia conduzir a Andaraí. Eu me atrasara exatamente cinco minutos; o carro partira no instante mesmo em que eu dobrava a esquina da rua do Ouvidor. Fiquei desolado, porque o próximo veículo só sairia dali a uma hora inteira, e a noite caía rápida sobre a baía do Rio de Janeiro.
+
+Olhei em torno e avistei outro veículo que manobrava devagar, preparando-se para a partida rumo a Botafogo. Sem pensar muito e movido pelo impulso de não ficar parado na poeira do largo, dei dois passos e saltei para dentro da carruagem.
+
+O interior estava quase às escuras; apenas uma fresta de luz entrava pelas cortinas de pano listrado. No fundo, sentada a um canto, repousava uma figura envolta num denso manto escuro. Um véu transparente ocultava-lhe o rosto, mas não conseguia disfarçar o contorno delicado das feições e o brilho tímido de dois olhos castanhos que pareceram fitar-me com espanto contido.
+
+Sentei-me em frente à desconhecida. Um perfume sutil de alfazema pairava no ar úmido da tarde. O carro rodou sobre os paralelepípedos e, durante vinte minutos de silêncio denso e eloqüente, percebi que aqueles cinco minutos de atraso fortuito haviam mudado o curso da minha juventude.
+
+A prosa elegante de Alencar desliza com música e cadência. Ao treinar a absorção em blocos rítmicos, o leitor moderno aprende a saborear cada detalhe sensorial do clássico sem tropeçar nas paradas vacilantes da voz falada.`,
+  quiz: [
+    {
+      id: 'd6-1',
+      question: 'Por que o protagonista da história perdeu o primeiro ônibus para o Andaraí?',
+      options: [
+        'Porque esqueceu o bilhete em casa',
+        'Porque atrasou-se exatamente cinco minutos e o carro acabara de partir',
+        'Porque foi assaltado na rua do Ouvidor',
+        'Porque preferiu tomar café no largo do Paço'
+      ],
+      correctIndex: 1,
+      explanation: 'Ele se atrasou cinco minutos e viu o carro partir no momento em que dobrava a esquina.'
+    },
+    {
+      id: 'd6-2',
+      question: 'Que atitude impulsiva o narrador tomou para não esperar uma hora inteira?',
+      options: [
+        'Voltou a pé até a praia de Botafogo',
+        'Alugou um cavalo veloz no cais',
+        'Embarcou em outro carro que manobrava em direção a Botafogo',
+        'Decidiu pernoitar em um hotel próximo'
+      ],
+      correctIndex: 2,
+      explanation: 'Para não ficar parado esperando, ele subiu no primeiro veículo que saía em direção a Botafogo.'
+    },
+    {
+      id: 'd6-3',
+      question: 'Quem o protagonista encontrou no interior da carruagem?',
+      options: [
+        'Um antigo professor de retórica da corte',
+        'Um oficial da marinha imperial',
+        'Uma jovem desconhecida envolta em um manto e véu, que o fitou com espanto contido',
+        'Um barão abastado que falava javanês'
+      ],
+      correctIndex: 2,
+      explanation: 'Ele encontrou uma jovem desconhecida protegida por um véu e manto escuro, perfumada de alfazema.'
+    }
+  ]
+};
+
+export const DIAGNOSTIC_TEXTS: ReadingText[] = [
+  INITIAL_DIAGNOSTIC_TEXT,
+  PERIODIC_ASSESSMENT_TEXT,
+  DIAGNOSTIC_TEXT_3,
+  DIAGNOSTIC_TEXT_4,
+  DIAGNOSTIC_TEXT_5,
+  DIAGNOSTIC_TEXT_6
+];
+
 export const READING_LIBRARY: ReadingText[] = [
   INITIAL_DIAGNOSTIC_TEXT,
   PERIODIC_ASSESSMENT_TEXT,
+  DIAGNOSTIC_TEXT_3,
+  DIAGNOSTIC_TEXT_4,
+  DIAGNOSTIC_TEXT_5,
+  DIAGNOSTIC_TEXT_6,
   {
     id: 'machado-cartomante',
     title: 'A Cartomante (Excerto Clássico)',
@@ -398,3 +633,35 @@ O treinamento deliberado de leitura dinâmica intervém diretamente nessa fisiol
     ]
   }
 ];
+
+/**
+ * Seleciona um texto aleatório para teste de diagnóstico ou aferição,
+ * evitando repetir textos já utilizados recentemente pelo usuário.
+ */
+export function getRandomAssessmentText(excludeIds: string[] = []): ReadingText {
+  // Pool de todos os textos que possuem quiz validado
+  const candidatesWithQuiz = READING_LIBRARY.filter(
+    item => item.quiz && item.quiz.length >= 2
+  );
+
+  // Filtrar textos não excluídos
+  const unreadCandidates = candidatesWithQuiz.filter(
+    item => !excludeIds.includes(item.id) && !excludeIds.includes(item.title)
+  );
+
+  const pool = unreadCandidates.length > 0 ? unreadCandidates : candidatesWithQuiz;
+  const randomIndex = Math.floor(Math.random() * pool.length);
+  return pool[randomIndex] || INITIAL_DIAGNOSTIC_TEXT;
+}
+
+/**
+ * Seleciona um texto aleatório para exercícios gerais (RSVP, Metrônomo, Blocos)
+ */
+export function getRandomExerciseText(excludeIds: string[] = []): ReadingText {
+  const unreadCandidates = READING_LIBRARY.filter(
+    item => !excludeIds.includes(item.id)
+  );
+  const pool = unreadCandidates.length > 0 ? unreadCandidates : READING_LIBRARY;
+  const randomIndex = Math.floor(Math.random() * pool.length);
+  return pool[randomIndex] || READING_LIBRARY[0];
+}

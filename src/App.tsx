@@ -16,7 +16,7 @@ import { RSVPReader } from './components/exercises/RSVPReader';
 import { ChunkingTrainer } from './components/exercises/ChunkingTrainer';
 import { SaccadicTrainer } from './components/exercises/SaccadicTrainer';
 import { ReadingTest } from './components/exercises/ReadingTest';
-import { PERIODIC_ASSESSMENT_TEXT } from './data/texts';
+import { getRandomAssessmentText, getRandomExerciseText } from './data/texts';
 
 export const App: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -43,9 +43,11 @@ export const App: React.FC = () => {
 
     // Se o usuário existir mas nunca realizou o teste diagnóstico inicial, abre o teste
     if (loadedUser && !loadedUser.initialTestCompleted) {
+      const initialText = getRandomAssessmentText();
       setActiveExercise({
         type: 'assessment',
-        isInitialDiagnostic: true
+        isInitialDiagnostic: true,
+        customText: initialText
       });
     }
   }, []);
@@ -72,11 +74,33 @@ export const App: React.FC = () => {
     storage.saveUser(newUser);
     setUser(newUser);
 
-    // Imediatamente abre o teste diagnóstico inicial com cronômetro para medir o baseline!
+    // Imediatamente abre o teste diagnóstico inicial com texto randomizado para medir o baseline!
+    const initialText = getRandomAssessmentText();
     setActiveExercise({
       type: 'assessment',
-      isInitialDiagnostic: true
+      isInitialDiagnostic: true,
+      customText: initialText
     });
+  };
+
+  // Restauração de Perfil Existente (por e-mail no celular ou código de sincronização)
+  const handleRestoreUser = (restoredProfile: UserProfile) => {
+    setUser(restoredProfile);
+    setResults(storage.getResults());
+    setDailyProgress(storage.getDailyProgress());
+
+    // Se o perfil já completou o teste inicial, NÃO abre o teste novamente!
+    if (!restoredProfile.initialTestCompleted) {
+      const initialText = getRandomAssessmentText();
+      setActiveExercise({
+        type: 'assessment',
+        isInitialDiagnostic: true,
+        customText: initialText
+      });
+    } else {
+      setActiveExercise(null);
+      setActiveTab('dashboard');
+    }
   };
 
   // Conclusão do Teste Inicial ou Periódico
@@ -107,7 +131,7 @@ export const App: React.FC = () => {
     storage.addResult({
       userId: user.id,
       exerciseType: 'assessment',
-      title: activeExercise?.isInitialDiagnostic ? 'Teste Diagnóstico Inicial' : 'Teste de Aferição (+50%)',
+      title: activeExercise?.customText?.title || (activeExercise?.isInitialDiagnostic ? 'Teste Diagnóstico Inicial' : 'Teste de Aferição (+50%)'),
       wpm: data.wpm,
       comprehensionScore: data.comprehensionScore,
       durationSeconds: data.durationSeconds
@@ -156,19 +180,35 @@ export const App: React.FC = () => {
     setActiveExercise(null);
   };
 
-  // Iniciar Etapa da Jornada Diária
+  // Iniciar Etapa da Jornada Diária (com randomização de textos para evitar repetições)
   const handleStartDailyStep = (stepId: number, type: ExerciseType) => {
+    let customText: ReadingText | undefined;
+
+    if (type === 'assessment') {
+      const recentTitles = results.filter(r => r.exerciseType === 'assessment').map(r => r.title);
+      customText = getRandomAssessmentText(recentTitles);
+    } else if (type === 'metronome' || type === 'rsvp' || type === 'chunking') {
+      customText = getRandomExerciseText();
+    }
+
     setActiveExercise({
       type,
       isDailyStep: true,
-      dailyStepId: stepId
+      dailyStepId: stepId,
+      customText
     });
   };
 
   // Iniciar Exercício do Catálogo Livre
   const handleSelectFreeExercise = (type: ExerciseType) => {
+    let customText: ReadingText | undefined;
+    if (type === 'assessment') {
+      const recentTitles = results.filter(r => r.exerciseType === 'assessment').map(r => r.title);
+      customText = getRandomAssessmentText(recentTitles);
+    }
     setActiveExercise({
-      type
+      type,
+      customText
     });
   };
 
@@ -180,16 +220,32 @@ export const App: React.FC = () => {
     });
   };
 
+  // Desconectar / Trocar de Conta
+  const handleLogout = () => {
+    storage.clearAllData();
+    setUser(null);
+    setResults([]);
+    setActiveExercise(null);
+  };
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-      {/* Modal de Cadastro Inicial (Nome + E-mail) */}
-      <AuthModal isOpen={user === null} onSave={handleSaveUser} />
+    <div className="min-h-screen bg-[#131211] text-[#f3efe8] flex flex-col font-sans">
+      {/* Modal de Cadastro / Restauração Multi-Dispositivo */}
+      <AuthModal
+        isOpen={user === null}
+        onSave={handleSaveUser}
+        onRestore={handleRestoreUser}
+      />
 
       {/* Modal do Guia Científico */}
       <StudyGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
 
       {/* Header Fixo */}
-      <Header user={user} onOpenGuide={() => setIsGuideOpen(true)} />
+      <Header
+        user={user}
+        onOpenGuide={() => setIsGuideOpen(true)}
+        onLogout={handleLogout}
+      />
 
       {/* Conteúdo Principal */}
       <main className="flex-1 w-full max-w-lg mx-auto overflow-x-hidden">
@@ -220,7 +276,7 @@ export const App: React.FC = () => {
                 onComplete={(wpm, durMin) => {
                   handleGenericExerciseComplete(
                     'metronome',
-                    'Metrônomo Anti-Subvocalização',
+                    `Metrônomo: ${activeExercise.customText?.title || 'Anti-Subvocalização'}`,
                     wpm,
                     durMin
                   );
@@ -236,7 +292,7 @@ export const App: React.FC = () => {
                 onComplete={(wpm, durMin) => {
                   handleGenericExerciseComplete(
                     'rsvp',
-                    'Leitor RSVP Ponto Focal (ORP)',
+                    `RSVP (ORP): ${activeExercise.customText?.title || 'Ponto Focal'}`,
                     wpm,
                     durMin
                   );
@@ -252,7 +308,7 @@ export const App: React.FC = () => {
                 onComplete={(wpm, durMin) => {
                   handleGenericExerciseComplete(
                     'chunking',
-                    'Leitura em Blocos (Chunking)',
+                    `Blocos: ${activeExercise.customText?.title || 'Chunking'}`,
                     wpm,
                     durMin
                   );
@@ -296,9 +352,11 @@ export const App: React.FC = () => {
                   onNavigate={(tab) => setActiveTab(tab)}
                   onStartDailyWorkout={() => setActiveTab('journey')}
                   onRetest={() => {
+                    const recentTitles = results.filter(r => r.exerciseType === 'assessment').map(r => r.title);
+                    const randomText = getRandomAssessmentText(recentTitles);
                     setActiveExercise({
                       type: 'assessment',
-                      customText: PERIODIC_ASSESSMENT_TEXT
+                      customText: randomText
                     });
                   }}
                 />
@@ -325,9 +383,11 @@ export const App: React.FC = () => {
                   user={user}
                   results={results}
                   onRetest={() => {
+                    const recentTitles = results.filter(r => r.exerciseType === 'assessment').map(r => r.title);
+                    const randomText = getRandomAssessmentText(recentTitles);
                     setActiveExercise({
                       type: 'assessment',
-                      customText: PERIODIC_ASSESSMENT_TEXT
+                      customText: randomText
                     });
                   }}
                 />
@@ -337,7 +397,7 @@ export const App: React.FC = () => {
         )}
       </main>
 
-      {/* Navegação Inferior Fixa (apenas se nenhum exercício estiver ativo) */}
+      {/* Navegação Inferior Fixa */}
       {!activeExercise && (
         <BottomNav
           activeTab={activeTab}

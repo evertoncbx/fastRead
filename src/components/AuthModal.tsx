@@ -1,102 +1,261 @@
 import React, { useState } from 'react';
-import { User, Mail, ArrowRight, Sparkles, BookOpen } from 'lucide-react';
+import { User, Mail, ArrowRight, BookOpen, KeyRound, Loader2, Sparkles, CheckCircle2, Cloud } from 'lucide-react';
 import { UserProfile } from '../types';
+import { storage } from '../services/storageService';
 
 interface AuthModalProps {
   isOpen: boolean;
   onSave: (name: string, email: string) => void;
+  onRestore: (profile: UserProfile) => void;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onSave }) => {
+export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onSave, onRestore }) => {
+  const [tab, setTab] = useState<'login' | 'import'>('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [syncCode, setSyncCode] = useState('');
+  const [isSearchingRemote, setIsSearchingRemote] = useState(false);
+  const [remoteFound, setRemoteFound] = useState<UserProfile | null>(null);
   const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) {
-      setError('Por favor, informe o seu nome.');
-      return;
+  // Busca perfil existente remotamente (Supabase ou Cloud KV)
+  const handleCheckEmail = async () => {
+    const cleanEmail = email.toLowerCase().trim();
+    if (!cleanEmail || !cleanEmail.includes('@')) return;
+
+    setIsSearchingRemote(true);
+    setError('');
+    try {
+      const result = await storage.fetchRemoteProfile(cleanEmail);
+      if (result.profile) {
+        setRemoteFound(result.profile);
+        if (!name.trim() && result.profile.name) {
+          setName(result.profile.name);
+        }
+      }
+    } catch {
+      // Falha silenciosa
+    } finally {
+      setIsSearchingRemote(false);
     }
-    if (!email.trim() || !email.includes('@')) {
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    const cleanEmail = email.toLowerCase().trim();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
       setError('Por favor, informe um e-mail válido.');
       return;
     }
-    setError('');
-    onSave(name.trim(), email.trim());
+
+    // Se já encontramos o perfil remoto, restaura diretamente!
+    if (remoteFound) {
+      onRestore(remoteFound);
+      return;
+    }
+
+    // Se ainda não buscou remotamente, tenta buscar antes de forçar novo cadastro
+    setIsSearchingRemote(true);
+    try {
+      const remote = await storage.fetchRemoteProfile(cleanEmail);
+      if (remote.profile) {
+        setIsSearchingRemote(false);
+        setRemoteFound(remote.profile);
+        onRestore(remote.profile);
+        return;
+      }
+    } catch {
+      // Ignora erro
+    } finally {
+      setIsSearchingRemote(false);
+    }
+
+    // Se realmente for novo perfil
+    if (!name.trim()) {
+      setError('Por favor, informe o seu nome para criar seu perfil.');
+      return;
+    }
+
+    onSave(name.trim(), cleanEmail);
+  };
+
+  const handleImportCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!syncCode.trim()) {
+      setError('Por favor, cole o código de sincronização.');
+      return;
+    }
+
+    const result = storage.importSyncCode(syncCode.trim());
+    if (result.success && result.user) {
+      onRestore(result.user);
+    } else {
+      setError(result.error || 'Código de sincronização inválido.');
+    }
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl relative overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        {/* Glow de fundo */}
-        <div className="absolute -top-16 -right-16 w-36 h-36 bg-indigo-600/20 rounded-full blur-2xl pointer-events-none" />
+    <div className="fixed inset-0 z-50 bg-[#131211]/90 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="bg-[#1c1917] border border-[#36322e] rounded-3xl max-w-sm w-full p-6 shadow-2xl relative overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-[#f3efe8]">
+        {/* Glow de fundo âmbar editorial sutil */}
+        <div className="absolute -top-16 -right-16 w-36 h-36 bg-amber-600/15 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="text-center mb-6">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center text-white mx-auto mb-3 shadow-lg shadow-indigo-600/30">
-            <BookOpen className="w-7 h-7" />
+        {/* Cabeçalho Editorial */}
+        <div className="text-center mb-5">
+          <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-amber-700 to-amber-500 flex items-center justify-center text-white mx-auto mb-3 shadow-md shadow-amber-900/30">
+            <BookOpen className="w-6 h-6" />
           </div>
-          <h2 className="text-xl font-black text-white">Bem-vindo ao Leitox</h2>
-          <p className="text-xs text-slate-400 mt-1">
-            Treinamento de Leitura Dinâmica para Aumentar sua Velocidade em até <strong className="text-indigo-400">+50%</strong>
+          <h2 className="text-xl font-black text-[#faf8f5] tracking-tight">Leitox</h2>
+          <p className="text-xs text-[#a39b8e] mt-1">
+            Treinamento de Leitura Dinâmica & Retenção Cognitiva
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3.5">
-          {error && (
-            <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs text-center">
-              {error}
-            </div>
-          )}
+        {/* Abas: E-mail / Código */}
+        <div className="flex border-b border-[#36322e] mb-4 text-xs font-semibold">
+          <button
+            onClick={() => { setTab('login'); setError(''); }}
+            className={`flex-1 py-2 text-center border-b-2 transition-colors ${
+              tab === 'login'
+                ? 'border-amber-500 text-amber-400'
+                : 'border-transparent text-[#a39b8e] hover:text-[#f3efe8]'
+            }`}
+          >
+            Acesso por E-mail
+          </button>
+          <button
+            onClick={() => { setTab('import'); setError(''); }}
+            className={`flex-1 py-2 text-center border-b-2 transition-colors ${
+              tab === 'import'
+                ? 'border-amber-500 text-amber-400'
+                : 'border-transparent text-[#a39b8e] hover:text-[#f3efe8]'
+            }`}
+          >
+            Código de Sincronização
+          </button>
+        </div>
 
-          <div>
-            <label className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold block mb-1">
-              Seu Nome Completo
-            </label>
-            <div className="relative">
-              <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Ex: Everton Carlos"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 pl-10 pr-3 text-xs text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+        {error && (
+          <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs text-center mb-3">
+            {error}
+          </div>
+        )}
+
+        {/* ABA 1: ACESSO POR E-MAIL */}
+        {tab === 'login' && (
+          <form onSubmit={handleSubmit} className="space-y-3.5">
+            <div>
+              <label className="text-[11px] uppercase tracking-wider text-[#a39b8e] font-semibold block mb-1">
+                Seu E-mail
+              </label>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-[#766f63] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="email"
+                  placeholder="Ex: seuemail@dominio.com"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (remoteFound) setRemoteFound(null);
+                  }}
+                  onBlur={handleCheckEmail}
+                  className="w-full bg-[#131211] border border-[#36322e] rounded-xl py-2.5 pl-10 pr-10 text-xs text-[#f3efe8] placeholder:text-[#585147] focus:outline-none focus:border-amber-500"
+                />
+                {isSearchingRemote && (
+                  <Loader2 className="w-4 h-4 text-amber-400 animate-spin absolute right-3 top-1/2 -translate-y-1/2" />
+                )}
+              </div>
+            </div>
+
+            {/* Alerta de Perfil Remoto Encontrado */}
+            {remoteFound ? (
+              <div className="p-3.5 rounded-2xl bg-amber-950/30 border border-amber-600/40 text-left space-y-2">
+                <div className="flex items-center gap-1.5 text-amber-400 text-xs font-bold">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Perfil Encontrado na Nuvem!</span>
+                </div>
+                <p className="text-xs text-[#d8d0c2] leading-relaxed">
+                  Olá, <strong>{remoteFound.name}</strong>! Sua meta de <strong>{remoteFound.targetWpm} PPM</strong> e seus {remoteFound.testsCompleted} treinos estão preservados.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => onRestore(remoteFound)}
+                  className="w-full py-2.5 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-amber-900/40 transition-all"
+                >
+                  <Cloud className="w-4 h-4" />
+                  <span>Restaurar Meu Progresso Neste Celular</span>
+                </button>
+              </div>
+            ) : (
+              <div>
+                <label className="text-[11px] uppercase tracking-wider text-[#a39b8e] font-semibold block mb-1">
+                  Seu Nome Completo
+                </label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-[#766f63] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Ex: Everton Carlos"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full bg-[#131211] border border-[#36322e] rounded-xl py-2.5 pl-10 pr-3 text-xs text-[#f3efe8] placeholder:text-[#585147] focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+              </div>
+            )}
+
+            {!remoteFound && (
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={isSearchingRemote}
+                  className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-amber-700 to-amber-600 hover:from-amber-600 hover:to-amber-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-900/30 active:scale-98 transition-all disabled:opacity-50"
+                >
+                  <span>{isSearchingRemote ? 'Verificando Nuvem...' : 'Acessar Treinamento'}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            <p className="text-[10px] text-[#766f63] text-center pt-1">
+              Se você já utilizou o Leitox no computador, seu perfil será sincronizado automaticamente pelo e-mail.
+            </p>
+          </form>
+        )}
+
+        {/* ABA 2: IMPORTAR CÓDIGO DE SINCRONIZAÇÃO */}
+        {tab === 'import' && (
+          <form onSubmit={handleImportCode} className="space-y-3.5">
+            <div>
+              <label className="text-[11px] uppercase tracking-wider text-[#a39b8e] font-semibold block mb-1">
+                Cole o Código de Sincronização
+              </label>
+              <textarea
+                rows={4}
+                placeholder="Cole aqui o código copiado do computador..."
+                value={syncCode}
+                onChange={(e) => setSyncCode(e.target.value)}
+                className="w-full bg-[#131211] border border-[#36322e] rounded-xl p-3 text-xs text-[#f3efe8] font-mono focus:outline-none focus:border-amber-500"
               />
             </div>
-          </div>
 
-          <div>
-            <label className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold block mb-1">
-              Seu E-mail
-            </label>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="email"
-                placeholder="Ex: seuemail@dominio.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 pl-10 pr-3 text-xs text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              />
-            </div>
-          </div>
-
-          <div className="pt-2">
             <button
               type="submit"
-              className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 active:scale-98 transition-all"
+              className="w-full py-3 px-4 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all"
             >
-              <span>Acessar Meu Treinamento</span>
-              <ArrowRight className="w-4 h-4" />
+              <KeyRound className="w-4 h-4" />
+              <span>Importar Dados e Entrar</span>
             </button>
-          </div>
 
-          <p className="text-[10px] text-slate-500 text-center pt-1">
-            Seu progresso será registrado individualmente e salvo com segurança.
-          </p>
-        </form>
+            <p className="text-[10px] text-[#766f63] text-center">
+              No computador, abra o menu superior do Leitox e clique em <em>Sincronizar</em> para copiar seu código.
+            </p>
+          </form>
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,15 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { INITIAL_DIAGNOSTIC_TEXT, PERIODIC_ASSESSMENT_TEXT, READING_LIBRARY } from '../src/data/texts.ts';
+import {
+  INITIAL_DIAGNOSTIC_TEXT,
+  PERIODIC_ASSESSMENT_TEXT,
+  DIAGNOSTIC_TEXTS,
+  READING_LIBRARY,
+  getRandomAssessmentText,
+  getRandomExerciseText
+} from '../src/data/texts.ts';
+import { storage } from '../src/services/storageService.ts';
+import { UserProfile } from '../src/types.ts';
 
 // Logic mirror from RSVPReader for test verification
 function calculateOrpParts(word: string) {
@@ -29,7 +38,6 @@ describe('RSVP ORP (Optimal Recognition Point) Algorithm', () => {
   });
 
   it('correctly selects ORP index for short words (<= 5 chars)', () => {
-    // 2-5 chars -> index 1
     const p2 = calculateOrpParts('de');
     assert.strictEqual(p2.orp, 'e');
     assert.strictEqual(p2.prefix, 'd');
@@ -41,26 +49,21 @@ describe('RSVP ORP (Optimal Recognition Point) Algorithm', () => {
   });
 
   it('correctly selects ORP index for medium words (6-9 chars)', () => {
-    // 6-9 chars -> index 2
     const p6 = calculateOrpParts('Brasil');
     assert.strictEqual(p6.orp, 'a');
     assert.strictEqual(p6.prefix, 'Br');
     assert.strictEqual(p6.suffix, 'sil');
 
-    const p9 = calculateOrpParts('velocidade');
-    // 'velocidade' has 10 chars -> index 3
     const p8 = calculateOrpParts('dinamica');
     assert.strictEqual(p8.orp, 'n');
     assert.strictEqual(p8.prefix, 'di');
   });
 
   it('correctly selects ORP index for long words (10-13 chars and 14+ chars)', () => {
-    // 10-13 chars -> index 3
     const p10 = calculateOrpParts('velocidade');
     assert.strictEqual(p10.orp, 'o');
     assert.strictEqual(p10.prefix, 'vel');
 
-    // 14+ chars -> index 4 (never exceeds length - 1)
     const p15 = calculateOrpParts('subvocalizacao');
     assert.strictEqual(p15.orp, 'o');
     assert.strictEqual(p15.prefix, 'subv');
@@ -96,14 +99,11 @@ describe('Reading Dynamics Metrics & Calculations (+50% Target)', () => {
 
   it('safely bounds WPM to realistic ranges (50 to 1500 PPM)', () => {
     const wordCount = 300;
-    
-    // Very fast click (0.5s) -> clamped to sensible maximum
     const fastSecs = 0.5;
     const rawFastWpm = Math.min(1500, Math.max(50, Math.round((wordCount / Math.max(3, fastSecs)) * 60)));
     assert(rawFastWpm <= 1500, 'Should not exceed 1500 WPM');
     assert(rawFastWpm >= 50, 'Should be at least 50 WPM');
 
-    // Normal reading (60s for 300 words = 300 WPM)
     const normalSecs = 60;
     const normalWpm = Math.min(1500, Math.max(50, Math.round((wordCount / normalSecs) * 60)));
     assert.strictEqual(normalWpm, 300);
@@ -112,8 +112,8 @@ describe('Reading Dynamics Metrics & Calculations (+50% Target)', () => {
 
 describe('PT-BR Reading Library & Quiz Integrity', () => {
   it('validates all library texts have content and wordCount', () => {
-    const allTexts = [INITIAL_DIAGNOSTIC_TEXT, PERIODIC_ASSESSMENT_TEXT, ...READING_LIBRARY];
-    assert(allTexts.length >= 5, 'Should have at least 5 curated texts');
+    const allTexts = READING_LIBRARY;
+    assert(allTexts.length >= 8, `Should have at least 8 curated texts, found ${allTexts.length}`);
 
     for (const item of allTexts) {
       assert(item.id.length > 0, `Text must have an id: ${item.id}`);
@@ -124,8 +124,8 @@ describe('PT-BR Reading Library & Quiz Integrity', () => {
     }
   });
 
-  it('validates all quiz questions and correctIndex bounds', () => {
-    const allTexts = [INITIAL_DIAGNOSTIC_TEXT, PERIODIC_ASSESSMENT_TEXT, ...READING_LIBRARY];
+  it('validates all quiz questions and correctIndex bounds across all texts', () => {
+    const allTexts = READING_LIBRARY;
     let totalQuestions = 0;
 
     for (const item of allTexts) {
@@ -144,7 +144,101 @@ describe('PT-BR Reading Library & Quiz Integrity', () => {
       }
     }
 
-    assert(totalQuestions >= 15, `Expected at least 15 comprehensive quiz questions, found ${totalQuestions}`);
+    assert(totalQuestions >= 25, `Expected at least 25 comprehensive quiz questions, found ${totalQuestions}`);
+  });
+});
+
+describe('Text Randomization & Anti-Repetition Engine', () => {
+  it('returns a diagnostic text with a valid quiz', () => {
+    const randomAssessment = getRandomAssessmentText();
+    assert(randomAssessment !== undefined);
+    assert(randomAssessment.quiz && randomAssessment.quiz.length >= 2);
+  });
+
+  it('avoids recently completed texts when excludeIds is provided', () => {
+    const exclude = ['diag-01', 'diag-02'];
+    // Executa múltiplos sorteios e valida que nenhum é diag-01 ou diag-02
+    for (let i = 0; i < 20; i++) {
+      const selected = getRandomAssessmentText(exclude);
+      assert.notStrictEqual(selected.id, 'diag-01');
+      assert.notStrictEqual(selected.id, 'diag-02');
+    }
+  });
+
+  it('gracefully falls back when all texts are in the exclusion list', () => {
+    const allQuizIds = READING_LIBRARY.filter(t => t.quiz && t.quiz.length > 0).map(t => t.id);
+    const fallback = getRandomAssessmentText(allQuizIds);
+    assert(fallback !== undefined);
+    assert(fallback.id.length > 0);
+  });
+
+  it('randomizes exercise texts for general training', () => {
+    const exclude = ['machado-cartomante'];
+    const text = getRandomExerciseText(exclude);
+    assert(text !== undefined);
+    assert.notStrictEqual(text.id, 'machado-cartomante');
+  });
+});
+
+describe('Cross-Device Sync & Backup Serialization', () => {
+  it('encodes and decodes sync codes without loss of profile data', () => {
+    const sampleProfile: UserProfile = {
+      id: 'usr_test_123',
+      name: 'Everton Carlos',
+      email: 'everton.cbx@gmail.com',
+      baselineWpm: 240,
+      targetWpm: 360,
+      currentWpm: 310,
+      bestWpm: 350,
+      averageComprehension: 85,
+      streakDays: 7,
+      lastActiveDate: '2026-11-01',
+      totalMinutesTrained: 45,
+      testsCompleted: 4,
+      initialTestCompleted: true,
+      createdAt: '2026-11-01T10:00:00.000Z'
+    };
+
+    // Serialização mockada de backup
+    const backupPayload = {
+      v: 1,
+      u: sampleProfile,
+      r: [{
+        id: 'res_1',
+        userId: sampleProfile.id,
+        exerciseType: 'assessment',
+        title: 'Teste Diagnóstico 1',
+        wpm: 240,
+        comprehensionScore: 80,
+        durationSeconds: 78,
+        date: '2026-11-01T10:02:00.000Z'
+      }],
+      d: {
+        date: '2026-11-01',
+        completedSteps: [1, 2],
+        totalMinutes: 8,
+        allDone: false
+      },
+      exportedAt: new Date().toISOString()
+    };
+
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(backupPayload))));
+    assert(encoded.length > 20);
+
+    // Deserialização
+    const decoded = decodeURIComponent(escape(atob(encoded)));
+    const restored = JSON.parse(decoded);
+    assert.strictEqual(restored.u.email, 'everton.cbx@gmail.com');
+    assert.strictEqual(restored.u.baselineWpm, 240);
+    assert.strictEqual(restored.u.targetWpm, 360);
+    assert.strictEqual(restored.u.initialTestCompleted, true);
+    assert.strictEqual(restored.r.length, 1);
+  });
+
+  it('rejects malformed sync codes gracefully', () => {
+    const invalidResult = storage.importSyncCode('codigo_invalido_totalmente_errado');
+    assert.strictEqual(invalidResult.success, false);
+    assert(invalidResult.error !== undefined);
   });
 });
 
@@ -154,11 +248,9 @@ describe('Streak Inactivity Validation', () => {
     const yesterdayStr = '2026-11-01';
     const twoDaysAgoStr = '2026-10-31';
 
-    // Active yesterday -> continuity kept
     const activeYesterdayContinuity = yesterdayStr === yesterdayStr || yesterdayStr === todayStr;
     assert.strictEqual(activeYesterdayContinuity, true);
 
-    // Active 2 days ago -> broken
     const activeTwoDaysAgoContinuity = twoDaysAgoStr === yesterdayStr || twoDaysAgoStr === todayStr;
     assert.strictEqual(activeTwoDaysAgoContinuity, false);
   });

@@ -249,7 +249,7 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
             {currentWordParts.prefix}
           </div>
 
-          <div className="text-amber-400 font-black scale-110 drop-shadow-[0_0_10px_rgba(245,158,11,0.5)] px-[1px]">
+          <div className="text-amber-400 font-black scale-110 px-[2px] bg-amber-500/15 rounded-md">
             {currentWordParts.orp}
           </div>
 

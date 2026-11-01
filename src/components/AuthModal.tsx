@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Mail, ArrowRight, BookOpen, KeyRound, Loader2, Sparkles, CheckCircle2, Cloud } from 'lucide-react';
 import { UserProfile } from '../types';
 import { storage } from '../services/storageService';
@@ -18,12 +18,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onSave, onRestore 
   const [remoteFound, setRemoteFound] = useState<UserProfile | null>(null);
   const [error, setError] = useState('');
 
-  if (!isOpen) return null;
-
-  // Busca perfil existente remotamente (Supabase ou Cloud KV)
-  const handleCheckEmail = async () => {
-    const cleanEmail = email.toLowerCase().trim();
-    if (!cleanEmail || !cleanEmail.includes('@')) return;
+  // Busca perfil existente remotamente (Supabase ou Cloud Storage)
+  const handleCheckEmail = async (targetEmail?: string) => {
+    const cleanEmail = (targetEmail || email).toLowerCase().trim();
+    if (!cleanEmail || !cleanEmail.includes('@') || cleanEmail.length < 5) return;
 
     setIsSearchingRemote(true);
     setError('');
@@ -41,6 +39,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onSave, onRestore 
       setIsSearchingRemote(false);
     }
   };
+
+  // Verificação debounced para celulares (detecta perfil antes mesmo de sair do campo)
+  useEffect(() => {
+    const cleanEmail = email.toLowerCase().trim();
+    if (cleanEmail.includes('@') && cleanEmail.includes('.') && cleanEmail.length >= 6) {
+      const timer = setTimeout(() => {
+        void handleCheckEmail(cleanEmail);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [email]);
+
+  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,7 +173,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onSave, onRestore 
                     setEmail(e.target.value);
                     if (remoteFound) setRemoteFound(null);
                   }}
-                  onBlur={handleCheckEmail}
+                  onBlur={() => handleCheckEmail()}
                   className="w-full bg-[#131211] border border-[#36322e] rounded-xl py-2.5 pl-10 pr-10 text-xs text-[#f3efe8] placeholder:text-[#585147] focus:outline-none focus:border-amber-500"
                 />
                 {isSearchingRemote && (

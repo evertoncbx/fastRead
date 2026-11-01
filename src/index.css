@@ -5,14 +5,14 @@
 @layer base {
   html {
     -webkit-tap-highlight-color: transparent;
-    background-color: #131211;
-    color: #f3efe8;
+    background-color: #181614;
+    color: #f5efe6;
   }
   
   body {
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    background-color: #131211;
-    color: #f3efe8;
+    background-color: #181614;
+    color: #f5efe6;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
   }
@@ -20,9 +20,9 @@
 
 /* Tipografia de Leitura Focada (Editorial Comfort) */
 .font-reading {
-  font-family: 'Charter', 'Georgia', 'Cambria', serif;
-  line-height: 1.8;
-  letter-spacing: 0.01em;
+  font-family: 'Newsreader', 'Lora', 'Charter', 'Georgia', 'Cambria', serif;
+  line-height: 1.85;
+  letter-spacing: 0.012em;
 }
 
 /* Custom scrollbar para ambiente de leitura */

@@ -637,6 +637,8 @@ O treinamento deliberado de leitura dinâmica intervém diretamente nessa fisiol
 /**
  * Seleciona um texto aleatório para teste de diagnóstico ou aferição,
  * evitando repetir textos já utilizados recentemente pelo usuário.
+ * Caso todos os textos da biblioteca já tenham sido lidos, garante que
+ * o texto MAIS RECENTE nunca seja repetido consecutivamente.
  */
 export function getRandomAssessmentText(excludeIds: string[] = []): ReadingText {
   // Pool de todos os textos que possuem quiz validado
@@ -644,24 +646,48 @@ export function getRandomAssessmentText(excludeIds: string[] = []): ReadingText 
     item => item.quiz && item.quiz.length >= 2
   );
 
-  // Filtrar textos não excluídos
+  // 1. Filtrar textos não lidos recentemente
   const unreadCandidates = candidatesWithQuiz.filter(
     item => !excludeIds.includes(item.id) && !excludeIds.includes(item.title)
   );
 
-  const pool = unreadCandidates.length > 0 ? unreadCandidates : candidatesWithQuiz;
+  if (unreadCandidates.length > 0) {
+    const randomIndex = Math.floor(Math.random() * unreadCandidates.length);
+    return unreadCandidates[randomIndex];
+  }
+
+  // 2. Fallback: Se o usuário já concluiu todos os textos, exclui obrigatoriamente
+  // o texto MAIS RECENTE (excludeIds[0]) para que em caso de repetição nunca caia no mesmo texto
+  const mostRecent = excludeIds[0];
+  const candidatesWithoutMostRecent = mostRecent
+    ? candidatesWithQuiz.filter(item => item.id !== mostRecent && item.title !== mostRecent)
+    : candidatesWithQuiz;
+
+  const pool = candidatesWithoutMostRecent.length > 0 ? candidatesWithoutMostRecent : candidatesWithQuiz;
   const randomIndex = Math.floor(Math.random() * pool.length);
   return pool[randomIndex] || INITIAL_DIAGNOSTIC_TEXT;
 }
 
 /**
  * Seleciona um texto aleatório para exercícios gerais (RSVP, Metrônomo, Blocos)
+ * garantindo rotação e impedindo repetição consecutiva do último texto.
  */
 export function getRandomExerciseText(excludeIds: string[] = []): ReadingText {
   const unreadCandidates = READING_LIBRARY.filter(
-    item => !excludeIds.includes(item.id)
+    item => !excludeIds.includes(item.id) && !excludeIds.includes(item.title)
   );
-  const pool = unreadCandidates.length > 0 ? unreadCandidates : READING_LIBRARY;
+
+  if (unreadCandidates.length > 0) {
+    const randomIndex = Math.floor(Math.random() * unreadCandidates.length);
+    return unreadCandidates[randomIndex];
+  }
+
+  const mostRecent = excludeIds[0];
+  const candidatesWithoutMostRecent = mostRecent
+    ? READING_LIBRARY.filter(item => item.id !== mostRecent && item.title !== mostRecent)
+    : READING_LIBRARY;
+
+  const pool = candidatesWithoutMostRecent.length > 0 ? candidatesWithoutMostRecent : READING_LIBRARY;
   const randomIndex = Math.floor(Math.random() * pool.length);
   return pool[randomIndex] || READING_LIBRARY[0];
 }

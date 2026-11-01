@@ -56,8 +56,14 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
     };
   }, []);
 
+  useEffect(() => {
+    if (customText) {
+      setText(customText);
+    }
+  }, [customText]);
+
   const handleShuffleText = () => {
-    const newText = getRandomAssessmentText([text.id]);
+    const newText = getRandomAssessmentText([text.id, text.title]);
     setText(newText);
   };
 

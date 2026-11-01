@@ -66,7 +66,7 @@ export default {
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
-        reading: ['Charter', 'Georgia', 'Cambria', 'Times New Roman', 'serif'],
+        reading: ['Newsreader', 'Lora', 'Charter', 'Georgia', 'Cambria', 'Times New Roman', 'serif'],
         mono: ['JetBrains Mono', 'ui-monospace', 'Menlo', 'monospace']
       },
       animation: {

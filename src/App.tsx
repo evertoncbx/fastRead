@@ -188,7 +188,8 @@ export const App: React.FC = () => {
       const recentTitles = results.filter(r => r.exerciseType === 'assessment').map(r => r.title);
       customText = getRandomAssessmentText(recentTitles);
     } else if (type === 'metronome' || type === 'rsvp' || type === 'chunking') {
-      customText = getRandomExerciseText();
+      const recentExerciseTitles = results.map(r => r.title);
+      customText = getRandomExerciseText(recentExerciseTitles);
     }
 
     setActiveExercise({

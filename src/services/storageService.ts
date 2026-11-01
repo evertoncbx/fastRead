@@ -4,7 +4,19 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 const USER_KEY = 'fastread_user_profile';
 const RESULTS_KEY = 'fastread_exercise_results';
 const DAILY_KEY = 'fastread_daily_progress';
-const CLOUD_SYNC_API = 'https://api.restful-api.dev/objects';
+const DEFAULT_STORAGE_URL = 'https://fvsrnuovfzcugkwdwixs.supabase.co/storage/v1/object';
+const DEFAULT_STORAGE_BUCKET = 'bridge-files';
+const DEFAULT_STORAGE_KEY = 'sb_publishable_y61ZayzWcRQSTHLQ0sqaZg_Z5NdiHpk';
+
+// Helper seguro para converter o e-mail em chave de armazenamento persistente
+export function emailToStorageKey(email: string): string {
+  const clean = email.toLowerCase().trim();
+  let hex = '';
+  for (let i = 0; i < clean.length; i++) {
+    hex += clean.charCodeAt(i).toString(16).padStart(2, '0');
+  }
+  return `fastread_usr_${hex}.json`;
+}
 
 // Safe environment variable getter (Vite no browser, Node nos testes)
 const getEnvVar = (name: string): string | undefined => {
@@ -331,13 +343,16 @@ export const storage = {
       }
     }
 
-    // 2. Tentar Cloud KV Sync (fallback quando Supabase não estiver configurado)
+    // 2. Tentar Cloud Storage Sync (fallback persistente quando Supabase DB não estiver configurado)
     try {
       const cloudObj = await this.fetchFromCloudKV(cleanEmail);
       if (cloudObj && cloudObj.profile) {
         safeStorage.setItem(USER_KEY, JSON.stringify(cloudObj.profile));
         if (cloudObj.results && cloudObj.results.length > 0) {
           safeStorage.setItem(RESULTS_KEY, JSON.stringify(cloudObj.results));
+        }
+        if (cloudObj.dailyProgress && cloudObj.dailyProgress.date) {
+          safeStorage.setItem(DAILY_KEY, JSON.stringify(cloudObj.dailyProgress));
         }
         return {
           profile: cloudObj.profile,
@@ -358,7 +373,7 @@ export const storage = {
   async syncToRemote(profile: UserProfile, results: ExerciseResult[]): Promise<boolean> {
     let synced = false;
 
-    // 1. Supabase
+    // 1. Supabase Custom DB (se configurado nas env vars)
     if (supabase) {
       try {
         const { error } = await supabase
@@ -385,73 +400,78 @@ export const storage = {
       }
     }
 
-    // 2. Cloud KV Backup
+    // 2. Cloud Storage Backup Persistente
     try {
-      await this.saveToCloudKV(profile, results.slice(0, 30));
+      await this.saveToCloudKV(profile, results.slice(0, 50));
       synced = true;
     } catch (err) {
-      console.warn('Cloud KV backup error:', err);
+      console.warn('Cloud Storage backup error:', err);
     }
 
     return synced;
   },
 
-  // Helper para Cloud KV
+  // Helper para Cloud Storage Persistente (Supabase Storage com Bucket Público)
   async saveToCloudKV(profile: UserProfile, results: ExerciseResult[]): Promise<void> {
     try {
+      if (typeof fetch === 'undefined') return;
+
       const cleanEmail = profile.email.toLowerCase().trim();
+      const fileName = emailToStorageKey(cleanEmail);
+      const uploadUrl = `${DEFAULT_STORAGE_URL}/${DEFAULT_STORAGE_BUCKET}/${fileName}`;
+
       const payload = {
-        name: `fastread_${cleanEmail}`,
-        data: {
-          profile,
-          results,
-          syncedAt: new Date().toISOString()
-        }
+        profile,
+        results: results.slice(0, 50),
+        dailyProgress: this.getDailyProgress(),
+        syncedAt: new Date().toISOString()
       };
 
-      if (typeof fetch !== 'undefined') {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3500);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
 
-        await fetch(CLOUD_SYNC_API, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          signal: controller.signal
-        }).catch(() => null);
+      await fetch(uploadUrl, {
+        method: 'POST',
+        headers: {
+          'apikey': DEFAULT_STORAGE_KEY,
+          'Authorization': `Bearer ${DEFAULT_STORAGE_KEY}`,
+          'Content-Type': 'application/json',
+          'x-upsert': 'true'
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      }).catch(() => null);
 
-        clearTimeout(timeoutId);
-      }
+      clearTimeout(timeoutId);
     } catch {
       // Ignorar erros de rede em modo offline
     }
   },
 
-  async fetchFromCloudKV(email: string): Promise<{ profile: UserProfile; results: ExerciseResult[] } | null> {
+  async fetchFromCloudKV(email: string): Promise<{ profile: UserProfile; results: ExerciseResult[]; dailyProgress?: DailyProgress } | null> {
     try {
       if (typeof fetch === 'undefined') return null;
 
       const cleanEmail = email.toLowerCase().trim();
-      const targetName = `fastread_${cleanEmail}`;
+      const fileName = emailToStorageKey(cleanEmail);
+      const publicUrl = `${DEFAULT_STORAGE_URL}/public/${DEFAULT_STORAGE_BUCKET}/${fileName}?_t=${Date.now()}`;
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3500);
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
 
-      const res = await fetch(`${CLOUD_SYNC_API}?name=${encodeURIComponent(targetName)}`, {
+      const res = await fetch(publicUrl, {
         signal: controller.signal
-      });
+      }).catch(() => null);
       clearTimeout(timeoutId);
 
-      if (!res.ok) return null;
-      const list = await res.json();
-      if (Array.isArray(list) && list.length > 0) {
-        const item = list[list.length - 1];
-        if (item && item.data && item.data.profile) {
-          return {
-            profile: item.data.profile,
-            results: item.data.results || []
-          };
-        }
+      if (!res || !res.ok) return null;
+      const data = await res.json();
+      if (data && data.profile && data.profile.email) {
+        return {
+          profile: data.profile,
+          results: Array.isArray(data.results) ? data.results : [],
+          dailyProgress: data.dailyProgress
+        };
       }
     } catch {
       return null;

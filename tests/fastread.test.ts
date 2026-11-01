@@ -8,7 +8,7 @@ import {
   getRandomAssessmentText,
   getRandomExerciseText
 } from '../src/data/texts.ts';
-import { storage } from '../src/services/storageService.ts';
+import { storage, emailToStorageKey } from '../src/services/storageService.ts';
 import { UserProfile } from '../src/types.ts';
 
 // Logic mirror from RSVPReader for test verification
@@ -165,22 +165,71 @@ describe('Text Randomization & Anti-Repetition Engine', () => {
     }
   });
 
-  it('gracefully falls back when all texts are in the exclusion list', () => {
+  it('gracefully falls back when all texts are in the exclusion list and strictly avoids the most recent text', () => {
     const allQuizIds = READING_LIBRARY.filter(t => t.quiz && t.quiz.length > 0).map(t => t.id);
-    const fallback = getRandomAssessmentText(allQuizIds);
-    assert(fallback !== undefined);
-    assert(fallback.id.length > 0);
+    const mostRecentId = allQuizIds[0];
+
+    // Testa 30 sorteios garantindo que o texto mais recente NUNCA é sorteado
+    for (let i = 0; i < 30; i++) {
+      const fallback = getRandomAssessmentText(allQuizIds);
+      assert(fallback !== undefined);
+      assert.notStrictEqual(fallback.id, mostRecentId, `Fallback should never pick most recent text ${mostRecentId}`);
+    }
   });
 
-  it('randomizes exercise texts for general training', () => {
+  it('randomizes exercise texts for general training avoiding recent text', () => {
     const exclude = ['machado-cartomante'];
-    const text = getRandomExerciseText(exclude);
-    assert(text !== undefined);
-    assert.notStrictEqual(text.id, 'machado-cartomante');
+    for (let i = 0; i < 15; i++) {
+      const text = getRandomExerciseText(exclude);
+      assert(text !== undefined);
+      assert.notStrictEqual(text.id, 'machado-cartomante');
+    }
   });
 });
 
-describe('Cross-Device Sync & Backup Serialization', () => {
+describe('Cross-Device Cloud Sync & Storage Engine', () => {
+  it('generates consistent, safe hex storage keys for email accounts', () => {
+    const key1 = emailToStorageKey('Everton.CBX@gmail.com');
+    const key2 = emailToStorageKey('everton.cbx@gmail.com ');
+    assert.strictEqual(key1, key2);
+    assert(key1.startsWith('fastread_usr_'));
+    assert(key1.endsWith('.json'));
+    assert.strictEqual(key1, 'fastread_usr_65766572746f6e2e63627840676d61696c2e636f6d.json');
+  });
+
+  it('uploads and restores user profile seamlessly via persistent cloud storage', async () => {
+    const testEmail = `test_sync_${Date.now()}@fastread.com`;
+    const testProfile: UserProfile = {
+      id: 'usr_sync_test',
+      name: 'Testador Mobile',
+      email: testEmail,
+      baselineWpm: 255,
+      targetWpm: 383,
+      currentWpm: 270,
+      bestWpm: 290,
+      averageComprehension: 90,
+      streakDays: 4,
+      lastActiveDate: storage.getTodayDateString(),
+      totalMinutesTrained: 25,
+      testsCompleted: 3,
+      initialTestCompleted: true,
+      createdAt: new Date().toISOString()
+    };
+
+    // 1. Sincroniza para a nuvem
+    const syncSuccess = await storage.syncToRemote(testProfile, []);
+    assert.strictEqual(syncSuccess, true, 'syncToRemote should succeed');
+
+    // 2. Busca e restaura simulando abertura no celular com o mesmo email
+    const remote = await storage.fetchRemoteProfile(testEmail);
+    assert(remote.profile !== null, 'Profile should be found in cloud');
+    assert.strictEqual(remote.profile.email, testEmail);
+    assert.strictEqual(remote.profile.baselineWpm, 255);
+    assert.strictEqual(remote.profile.targetWpm, 383);
+    assert.strictEqual(remote.profile.initialTestCompleted, true);
+    assert.strictEqual(remote.source, 'cloud');
+  });
+
   it('encodes and decodes sync codes without loss of profile data', () => {
     const sampleProfile: UserProfile = {
       id: 'usr_test_123',

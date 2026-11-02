@@ -1,35 +1,30 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Play, Pause, RotateCcw, Volume2, VolumeX, ArrowLeft, Clock, Zap, CheckCircle2, BookOpen } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, VolumeX, ArrowLeft, Clock, Zap, CheckCircle2 } from 'lucide-react';
 import { audio } from '../../services/audioService';
-import { READING_LIBRARY } from '../../data/texts';
+import { READING_LIBRARY, getRandomExerciseText } from '../../data/texts';
+import { storage } from '../../services/storageService';
 import { ReadingText } from '../../types';
+import { CountdownOverlay } from './CountdownOverlay';
 import confetti from 'canvas-confetti';
 
 interface MetronomeReaderProps {
   customText?: ReadingText;
-  onComplete?: (wpm: number, durationMinutes: number) => void;
+  onComplete?: (wpm: number, durationMinutes: number, textTitle?: string, textId?: string) => void;
   onBack?: () => void;
   isDailyStep?: boolean;
 }
 
 export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, onComplete, onBack, isDailyStep }) => {
-  const availableTexts = useMemo(() => {
-    if (customText && !READING_LIBRARY.some(t => t.id === customText.id)) {
-      return [customText, ...READING_LIBRARY];
-    }
-    return READING_LIBRARY;
-  }, [customText]);
-
-  const [selectedTextIndex, setSelectedTextIndex] = useState<number>(() => {
-    if (customText) {
-      const idx = READING_LIBRARY.findIndex(t => t.id === customText.id);
-      return idx >= 0 ? idx : 0;
-    }
-    return 0;
+  const [currentText, setCurrentText] = useState<ReadingText>(() => {
+    if (customText) return customText;
+    const exclusions = storage.getRecentReadTexts();
+    return getRandomExerciseText(exclusions);
   });
+
   const [bpm, setBpm] = useState<number>(200); // 120 a 380 BPM
   const [wordsPerBeat] = useState<number>(1);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [showCountdown, setShowCountdown] = useState<boolean>(false);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [, setIsAccentBeat] = useState<boolean>(false);
   const [beatCount, setBeatCount] = useState<number>(0);
@@ -37,8 +32,6 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
   const [sessionSeconds] = useState<number>(180);
   const [remainingSeconds, setRemainingSeconds] = useState<number>(180);
   const [soundOn, setSoundOn] = useState<boolean>(audio.isEnabled());
-
-  const currentText = availableTexts[selectedTextIndex] || availableTexts[0];
 
   const words = useMemo(() => {
     return currentText.text.split(/\s+/).filter(w => w.trim().length > 0);
@@ -51,6 +44,16 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
   const wordsContainerRef = useRef<HTMLDivElement>(null);
   const activeWordRef = useRef<HTMLSpanElement>(null);
 
+  const handleShuffleText = () => {
+    setIsPlaying(false);
+    setCurrentIndex(0);
+    setIsFinished(false);
+    const exclusions = [currentText.id, currentText.title, ...storage.getRecentReadTexts()];
+    const nextText = getRandomExerciseText(exclusions);
+    storage.addRecentReadText(nextText.id, nextText.title);
+    setCurrentText(nextText);
+  };
+
   useEffect(() => {
     return () => {
       if (metronomeTimerRef.current) clearInterval(metronomeTimerRef.current);
@@ -62,57 +65,70 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
     if (isPlaying && activeWordRef.current && wordsContainerRef.current) {
       const container = wordsContainerRef.current;
       const element = activeWordRef.current;
-      const elementTop = element.offsetTop;
+      const containerTop = container.scrollTop;
       const containerHeight = container.clientHeight;
-      container.scrollTo({
-        top: elementTop - containerHeight / 2,
-        behavior: 'smooth'
-      });
+      const elementTop = element.offsetTop;
+      const elementHeight = element.offsetHeight;
+
+      if (elementTop < containerTop + 60 || elementTop + elementHeight > containerTop + containerHeight - 60) {
+        container.scrollTo({
+          top: Math.max(0, elementTop - containerHeight / 3),
+          behavior: 'smooth'
+        });
+      }
     }
   }, [currentIndex, isPlaying]);
 
-  const startMetronome = () => {
-    setIsPlaying(true);
-    setIsFinished(false);
+  useEffect(() => {
+    if (isPlaying) {
+      const beatIntervalMs = (60 / bpm) * 1000;
+      let localBeat = beatCount;
 
-    countdownTimerRef.current = window.setInterval(() => {
-      setRemainingSeconds(prev => {
-        if (prev <= 1) {
-          stopMetronome();
-          handleSessionComplete();
-          return 0;
+      metronomeTimerRef.current = window.setInterval(() => {
+        localBeat++;
+        setBeatCount(localBeat);
+        const isAccent = localBeat % 4 === 1;
+        setIsAccentBeat(isAccent);
+
+        if (soundOn) {
+          if (isAccent) audio.playMetronomeTick(true);
+          else audio.playMetronomeTick(false);
         }
-        return prev - 1;
-      });
-    }, 1000);
 
-    let count = 0;
-    metronomeTimerRef.current = window.setInterval(() => {
-      count++;
-      setBeatCount(count);
-      const isAccent = count % 4 === 1;
-      setIsAccentBeat(isAccent);
-      audio.playMetronomeTick(isAccent);
+        setCurrentIndex(prev => {
+          const next = prev + wordsPerBeat;
+          if (next >= words.length) {
+            handleCompleteSession();
+            return words.length - 1;
+          }
+          return next;
+        });
+      }, beatIntervalMs);
 
-      setCurrentIndex(prev => {
-        const next = prev + wordsPerBeat;
-        if (next >= words.length) {
-          stopMetronome();
-          handleSessionComplete();
-          return words.length - 1;
-        }
-        return next;
-      });
-    }, Math.round((60 / bpm) * 1000));
-  };
+      countdownTimerRef.current = window.setInterval(() => {
+        setRemainingSeconds(prev => {
+          if (prev <= 1) {
+            handleCompleteSession();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      if (metronomeTimerRef.current) clearInterval(metronomeTimerRef.current);
+      if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+    }
 
-  const stopMetronome = () => {
-    setIsPlaying(false);
+    return () => {
+      if (metronomeTimerRef.current) clearInterval(metronomeTimerRef.current);
+      if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+    };
+  }, [isPlaying, bpm, wordsPerBeat, soundOn, words.length]);
+
+  const handleCompleteSession = () => {
     if (metronomeTimerRef.current) clearInterval(metronomeTimerRef.current);
     if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
-  };
-
-  const handleSessionComplete = () => {
+    setIsPlaying(false);
     setIsFinished(true);
     audio.playSuccess();
     confetti({
@@ -122,11 +138,29 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
     });
   };
 
+  const handlePlayPause = () => {
+    if (isPlaying) {
+      setIsPlaying(false);
+      return;
+    }
+
+    if (isFinished) {
+      setCurrentIndex(0);
+      setRemainingSeconds(sessionSeconds);
+      setIsFinished(false);
+    }
+    setShowCountdown(true);
+  };
+
   const handleReset = () => {
-    stopMetronome();
+    setIsPlaying(false);
+    setShowCountdown(false);
     setCurrentIndex(0);
     setRemainingSeconds(sessionSeconds);
     setIsFinished(false);
+    if (wordsContainerRef.current) {
+      wordsContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const toggleSound = () => {
@@ -141,15 +175,25 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
   };
 
   return (
-    <div className="flex flex-col min-h-full max-w-lg mx-auto p-4 pb-24 text-stone-800">
+    <div className="flex flex-col min-h-full max-w-lg mx-auto p-4 pb-32 text-[#131F24]">
+      {/* Contador Regressivo de 3 Segundos */}
+      <CountdownOverlay
+        isActive={showCountdown}
+        onComplete={() => {
+          setShowCountdown(false);
+          setIsPlaying(true);
+        }}
+        title="Metrônomo Rítmico"
+      />
+
       {/* Top bar */}
       <div className="flex items-center justify-between mb-4">
         {onBack ? (
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-sm font-bold text-stone-700 hover:text-stone-900 transition-colors py-2 px-3.5 rounded-xl bg-white border-2 border-stone-200 shadow-xs cursor-pointer"
+            className="btn-duo-white py-2.5 px-4 text-base font-black flex items-center gap-2 cursor-pointer"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-5 h-5 stroke-[2.5]" />
             <span>Voltar</span>
           </button>
         ) : <div />}
@@ -158,218 +202,146 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
           <button
             onClick={toggleSound}
             aria-label="Alternar som"
-            className="p-2.5 rounded-xl bg-white border-2 border-stone-200 text-stone-700 hover:text-stone-900 shadow-xs transition-colors cursor-pointer"
+            className="p-2.5 rounded-2xl bg-white border-2 border-stone-200 border-b-4 border-b-stone-300 text-stone-600 cursor-pointer"
           >
-            {soundOn ? <Volume2 className="w-5 h-5 text-emerald-600" /> : <VolumeX className="w-5 h-5 text-stone-400" />}
+            {soundOn ? <Volume2 className="w-5 h-5 text-[#58CC02]" /> : <VolumeX className="w-5 h-5 text-stone-400" />}
           </button>
         </div>
       </div>
 
       {/* Header Info */}
-      <div className="bg-white p-5 rounded-3xl border-2 border-stone-200 mb-4 shadow-xs">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center text-emerald-700 shrink-0">
-            <Clock className="w-5 h-5" />
+      <div className="card-duo p-5 mb-4 space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-[#D7FFB8] border-2 border-[#A8EE69] flex items-center justify-center text-[#46A302]">
+              <Zap className="w-7 h-7 stroke-[2.5]" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black text-[#131F24]">
+                Metrônomo Rítmico
+              </h2>
+            </div>
           </div>
-          <div>
-            <h2 className="text-base sm:text-lg font-black text-stone-900 flex items-center gap-2">
-              Metrônomo Anti-Subvocalização
-              {isDailyStep && (
-                <span className="text-xs bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-0.5 rounded-full font-bold">
-                  Jornada
-                </span>
-              )}
-            </h2>
-            <p className="text-xs sm:text-sm text-stone-600 font-medium">Silenciando a voz interior com cadência rítmica forçada</p>
+
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 bg-[#D7FFB8] text-[#46A302] border-2 border-[#A8EE69] px-3.5 py-1.5 rounded-full text-sm font-black font-mono">
+              <span>{calculatedWpm} PPM</span>
+            </div>
+            <div className="flex items-center gap-1 bg-stone-100 border-2 border-stone-200 px-3 py-1.5 rounded-full text-sm font-mono font-black text-stone-600">
+              <Clock className="w-4 h-4" />
+              <span>{formatTime(remainingSeconds)}</span>
+            </div>
           </div>
         </div>
 
-        {/* Instruções neurocientíficas */}
-        <div className="mt-3 bg-emerald-50/80 p-3.5 rounded-2xl border border-emerald-200 text-xs sm:text-sm text-emerald-950 flex items-start gap-2.5 leading-relaxed">
-          <Zap className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-          <div>
-            <strong className="text-emerald-950 font-bold block mb-0.5">Técnica Comprovada:</strong>
-            Mantenha a língua relaxada contra o céu da boca. Acompanhe o destaque sem mover os lábios nem pronunciar mentalmente — confie na captação visual direta!
-          </div>
-        </div>
-      </div>
-
-      {/* Seletor de Textos */}
-      <div className="mb-3.5 bg-white border-2 border-stone-200 p-3.5 rounded-2xl shadow-xs">
-        <label className="text-xs uppercase tracking-wider text-stone-600 font-bold block mb-1.5 flex items-center gap-2">
-          <BookOpen className="w-4 h-4 text-emerald-600" />
-          Texto Selecionado:
-        </label>
-        <select
-          value={selectedTextIndex}
-          disabled={isPlaying}
-          onChange={(e) => {
-            setSelectedTextIndex(Number(e.target.value));
-            handleReset();
-          }}
-          className="w-full bg-stone-50 border-2 border-stone-200 rounded-xl py-2 px-3 text-xs sm:text-sm text-stone-900 font-semibold focus:bg-white focus:outline-none focus:border-emerald-600 transition-colors"
-        >
-          {availableTexts.map((item, idx) => (
-            <option key={item.id} value={idx}>
-              {item.title} ({item.author})
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Controles de BPM & Velocidade */}
-      <div className="bg-white border-2 border-stone-200 p-4 rounded-3xl mb-4 shadow-xs">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <span className="text-xs uppercase tracking-wider text-stone-500 block font-bold">Velocidade Alvo</span>
-            <span className="text-3xl font-black text-stone-900 font-mono flex items-center gap-2">
-              {calculatedWpm} <span className="text-sm font-black text-emerald-700">PPM</span>
-            </span>
-          </div>
-
-          <div className="text-right">
-            <span className="text-xs uppercase tracking-wider text-stone-500 block font-bold">Tempo Restante</span>
-            <span className="text-2xl font-black text-emerald-700 font-mono">
-              {formatTime(remainingSeconds)}
-            </span>
-          </div>
-        </div>
-
-        {/* Slider de BPM */}
-        <div className="space-y-2 mt-3">
-          <div className="flex justify-between text-xs sm:text-sm font-semibold text-stone-600">
-            <span>Cadência: {bpm} BPM</span>
-            <span>1 palavra por batida</span>
-          </div>
-          <input
-            type="range"
-            min="120"
-            max="360"
-            step="10"
-            value={bpm}
-            disabled={isPlaying}
-            onChange={(e) => setBpm(Number(e.target.value))}
-            className="w-full accent-emerald-600 bg-stone-100 h-2.5 rounded-lg cursor-pointer"
-          />
-          <div className="flex justify-between text-xs text-stone-500 font-mono font-medium">
-            <span>120 (Iniciante)</span>
-            <span>220 (Acelerado)</span>
-            <span>360 (Turbo)</span>
-          </div>
-        </div>
-
-        {/* Pulso Visual do Metrônomo (4 tempos) */}
-        <div className="flex items-center justify-center gap-3.5 mt-4 pt-3.5 border-t border-stone-100">
-          {[1, 2, 3, 4].map((step) => {
-            const isActive = isPlaying && ((beatCount % 4) === (step % 4));
-            return (
-              <div
-                key={step}
-                className={`w-5 h-5 rounded-full transition-all duration-75 flex items-center justify-center ${
-                  isActive
-                    ? step === 1
-                      ? 'bg-emerald-600 scale-125 shadow-md shadow-emerald-500/50'
-                      : 'bg-emerald-500 scale-110 shadow-xs'
-                    : 'bg-stone-200'
-                }`}
-              />
-            );
-          })}
+        <div className="pt-2 border-t-2 border-stone-100 flex items-center justify-between text-sm font-bold text-stone-500">
+          <span className="truncate pr-2 font-black text-[#131F24] text-base">{currentText.title}</span>
+          <span className="shrink-0 font-mono text-sm">{currentIndex + 1} de {words.length}</span>
         </div>
       </div>
 
-      {/* Janela de Leitura Estável:
-          ZERO REFLOW - Não usa font-bold nem scale-105.
-          O peso da fonte e o espaçamento permanecem rigorosamente idênticos,
-          garantindo que o parágrafo não trema nem altere as quebras de linha!
-      */}
-      <div className="relative bg-[#FCFBF8] border-2 border-stone-200 rounded-3xl shadow-xs overflow-hidden mb-4 flex-1 min-h-[240px] max-h-[340px] flex flex-col">
-        <div
-          ref={wordsContainerRef}
-          className="relative p-5 overflow-y-auto leading-relaxed text-base sm:text-lg font-reading select-none"
-        >
+      {/* ÁREA DE LEITURA COM PALAVRA DESTACADA EM DUOLINGO GREEN */}
+      <div
+        ref={wordsContainerRef}
+        className="card-duo p-6 sm:p-8 bg-white min-h-[320px] max-h-[50vh] overflow-y-auto mb-4 font-reading text-2xl sm:text-3xl leading-[2.2] text-[#131F24] select-none"
+      >
+        <div className="flex flex-wrap gap-x-2.5 gap-y-3.5 items-center">
           {words.map((word, idx) => {
-            const isCurrent = idx >= currentIndex && idx < currentIndex + wordsPerBeat;
+            const isActive = idx === currentIndex;
             const isPast = idx < currentIndex;
 
             return (
-              <React.Fragment key={idx}>
-                <span
-                  ref={isCurrent ? activeWordRef : null}
-                  className={`inline rounded transition-colors duration-75 px-1 py-0.5 font-normal ${
-                    isCurrent
-                      ? 'bg-emerald-100 text-emerald-950 underline decoration-emerald-500 decoration-2 underline-offset-4 ring-1 ring-emerald-300'
-                      : isPast
-                      ? 'text-stone-400'
-                      : 'text-stone-900'
-                  }`}
-                >
-                  {word}
-                </span>
-                {' '}
-              </React.Fragment>
+              <span
+                key={idx}
+                ref={isActive ? activeWordRef : null}
+                className={`transition-all rounded-xl px-2 py-0.5 ${
+                  isActive
+                    ? 'bg-[#58CC02] text-white font-black scale-105 shadow-sm'
+                    : isPast
+                    ? 'text-stone-300 font-medium'
+                    : 'text-[#131F24] font-medium'
+                }`}
+              >
+                {word}
+              </span>
             );
           })}
         </div>
-
-        {/* Overlay se finalizou */}
-        {isFinished && (
-          <div className="absolute inset-0 bg-white/95 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center z-20 animate-in fade-in duration-200">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center text-emerald-600 mb-3">
-              <CheckCircle2 className="w-8 h-8" />
-            </div>
-            <h3 className="text-lg font-black text-stone-900 mb-1">Excelente Ritmo Mantido!</h3>
-            <p className="text-xs sm:text-sm text-stone-600 mb-4 max-w-xs">
-              Sua subvocalização foi silenciada em prol da percepção visual direta.
-            </p>
-            <div className="bg-stone-50 border-2 border-stone-200 py-3 px-6 rounded-2xl mb-5 font-mono">
-              <span className="text-xs text-stone-500 font-bold uppercase tracking-wider block">Velocidade Mantida</span>
-              <span className="text-3xl font-black text-emerald-700">{calculatedWpm} PPM</span>
-            </div>
-            {onComplete && (
-              <button
-                onClick={() => onComplete(calculatedWpm, Math.max(1, Math.round((sessionSeconds - remainingSeconds) / 60)))}
-                className="py-3.5 px-8 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-bold text-sm sm:text-base flex items-center gap-2 shadow-md border-b-4 border-emerald-800 transition-all cursor-pointer"
-              >
-                <CheckCircle2 className="w-5 h-5" />
-                <span>Concluir Exercício</span>
-              </button>
-            )}
-          </div>
-        )}
       </div>
 
-      {/* Barra de Ação Principal Estilo Duolingo */}
-      <div className="flex gap-3">
+      {/* Controle de Cadência (BPM) */}
+      <div className="card-duo p-5 mb-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-black uppercase text-stone-400">Cadência Rítmica</span>
+          <span className="text-2xl font-black text-[#46A302] font-mono">{bpm} BPM ({calculatedWpm} PPM)</span>
+        </div>
+
+        <input
+          type="range"
+          min="120"
+          max="360"
+          step="10"
+          value={bpm}
+          onChange={(e) => setBpm(Number(e.target.value))}
+          className="w-full accent-[#58CC02] h-3.5 bg-stone-100 rounded-lg cursor-pointer"
+        />
+
+        <div className="flex justify-between gap-2">
+          {[160, 220, 280, 340].map((preset) => (
+            <button
+              key={preset}
+              onClick={() => setBpm(preset)}
+              className={`flex-1 py-2 rounded-2xl text-sm font-black transition-all cursor-pointer ${
+                bpm === preset
+                  ? 'bg-[#58CC02] border-b-2 border-[#46A302] text-white'
+                  : 'btn-duo-white'
+              }`}
+            >
+              {preset} BPM
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Botões de Ação */}
+      <div className="flex items-center gap-3">
         <button
-          onClick={isPlaying ? stopMetronome : startMetronome}
-          className={`flex-1 py-4 px-5 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2.5 transition-all shadow-md border-b-4 cursor-pointer active:scale-98 ${
-            isPlaying
-              ? 'bg-stone-100 hover:bg-stone-200 text-stone-800 border-stone-300'
-              : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-800'
+          onClick={handleReset}
+          title="Reiniciar"
+          className="p-4.5 btn-duo-white flex items-center justify-center shrink-0 cursor-pointer"
+        >
+          <RotateCcw className="w-6 h-6 stroke-[2.5]" />
+        </button>
+
+        <button
+          onClick={handlePlayPause}
+          className={`flex-1 py-4.5 px-6 text-xl font-black flex items-center justify-center gap-2 cursor-pointer ${
+            isPlaying ? 'btn-duo-yellow' : 'btn-duo-green'
           }`}
         >
           {isPlaying ? (
             <>
-              <Pause className="w-5 h-5 fill-current" />
-              <span>Pausar Metrônomo</span>
+              <Pause className="w-7 h-7 fill-current" />
+              <span>Pausar</span>
             </>
           ) : (
             <>
-              <Play className="w-5 h-5 fill-current" />
-              <span>Iniciar Ritmo ({calculatedWpm} PPM)</span>
+              <Play className="w-7 h-7 fill-current" />
+              <span>{isFinished ? 'Reiniciar' : 'Começar'}</span>
             </>
           )}
         </button>
-
-        <button
-          onClick={handleReset}
-          aria-label="Reiniciar texto"
-          className="p-4 rounded-2xl bg-white border-2 border-stone-200 text-stone-700 hover:text-stone-900 hover:bg-stone-50 transition-colors shadow-xs cursor-pointer active:scale-98"
-        >
-          <RotateCcw className="w-5 h-5" />
-        </button>
       </div>
+
+      {isFinished && onComplete && (
+        <button
+          onClick={() => onComplete(calculatedWpm, 3, currentText.title, currentText.id)}
+          className="w-full mt-4 py-4.5 px-6 btn-duo-green text-lg font-black flex items-center justify-center gap-2 cursor-pointer animate-in fade-in"
+        >
+          <CheckCircle2 className="w-6 h-6 stroke-[2.5]" />
+          <span>Salvar Resultado do Treino</span>
+        </button>
+      )}
     </div>
   );
 };

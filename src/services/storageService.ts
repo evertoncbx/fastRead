@@ -1,4 +1,4 @@
-import { UserProfile, ExerciseResult, DailyProgress } from '../types';
+import { UserProfile, ExerciseResult, DailyProgress, ReadingText } from '../types';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 const USER_KEY = 'fastread_user_profile';
@@ -9,11 +9,17 @@ const DAILY_KEY = 'fastread_daily_progress';
 export const DEFAULT_SUPABASE_URL = 'https://fvsrnuovfzcugkwdwixs.supabase.co';
 export const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_y61ZayzWcRQSTHLQ0sqaZg_Z5NdiHpk';
 
-export const FR_TABLES = {
-  PROFILES: 'fr_profiles',
-  RESULTS: 'fr_exercise_results',
-  DAILY: 'fr_daily_progress'
+export const APPFR_TABLES = {
+  PROFILES: 'appfr_profiles',
+  RESULTS: 'appfr_exercise_results',
+  DAILY: 'appfr_daily_progress',
+  TEXTS: 'appfr_texts'
 } as const;
+
+export const FR_TABLES = APPFR_TABLES;
+
+// Cache volátil em memória para textos do Supabase (zero impacto no limite do localStorage)
+let remoteTextsCache: any[] | null = null;
 
 const DEFAULT_STORAGE_URL = 'https://fvsrnuovfzcugkwdwixs.supabase.co/storage/v1/object';
 const DEFAULT_STORAGE_BUCKET = 'bridge-files';
@@ -148,6 +154,101 @@ export const storage = {
     const updated = { ...current, ...updates };
     this.saveUser(updated);
     return updated;
+  },
+
+  // === RECENT READ TEXTS (ANTI-REPETIÇÃO PERSISTENTE) ===
+  getRecentReadTexts(): string[] {
+    try {
+      const raw = safeStorage.getItem('fastread_recent_read_texts');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  addRecentReadText(textId: string, textTitle?: string): void {
+    try {
+      const list = this.getRecentReadTexts();
+      const cleanTitle = textTitle ? textTitle.replace(/^(Metrônomo|RSVP Turbo|RSVP|Blocos|Teste):\s*/i, '').trim() : undefined;
+      const additions: string[] = [textId];
+      if (cleanTitle) additions.push(cleanTitle);
+      const updated = [...additions, ...list.filter(x => !additions.includes(x))].slice(0, 30);
+      safeStorage.setItem('fastread_recent_read_texts', JSON.stringify(updated));
+    } catch {}
+  },
+
+  // === BIBLIOTECA REMOTA SUPABASE (appfr.texts / appfr_texts) ===
+  async fetchRemoteTexts(): Promise<ReadingText[] | null> {
+    if (!supabase) return null;
+    try {
+      // 1. Tenta carregar de public.appfr_texts
+      let { data, error } = await supabase.from(APPFR_TABLES.TEXTS).select('*');
+
+      // 2. Fallback para schema appfr
+      if ((error || !data || data.length === 0) && typeof (supabase as any).schema === 'function') {
+        try {
+          const schemaRes = await (supabase as any).schema('appfr').from('texts').select('*');
+          if (!schemaRes.error && schemaRes.data && schemaRes.data.length > 0) {
+            data = schemaRes.data;
+            error = null;
+          }
+        } catch {}
+      }
+
+      if (error || !data || data.length === 0) return null;
+
+      const mapped: ReadingText[] = data.map((row: any) => ({
+        id: row.id,
+        title: row.title,
+        author: row.author,
+        category: row.category,
+        description: row.description || '',
+        wordCount: row.word_count || (row.text ? row.text.split(/\s+/).length : 0),
+        estimatedMinutes: row.estimated_minutes || 2,
+        difficultyLevel: row.difficulty_level || 2,
+        difficultyScore: Number(row.difficulty_score) || 0,
+        text: row.text,
+        quiz: row.quiz && Array.isArray(row.quiz) ? row.quiz : undefined
+      }));
+
+      remoteTextsCache = mapped;
+      return mapped;
+    } catch (e) {
+      console.warn('Erro ao buscar textos no Supabase:', e);
+      return null;
+    }
+  },
+
+  getRemoteTextsCache(): ReadingText[] | null {
+    return remoteTextsCache as ReadingText[] | null;
+  },
+
+  setRemoteTextsCache(texts: ReadingText[]): void {
+    remoteTextsCache = texts;
+  },
+
+  async saveRemoteText(text: ReadingText): Promise<boolean> {
+    if (!supabase) return false;
+    try {
+      const payload = {
+        id: text.id,
+        title: text.title,
+        author: text.author,
+        category: text.category,
+        description: text.description || '',
+        word_count: text.wordCount,
+        estimated_minutes: text.estimatedMinutes,
+        difficulty_level: text.difficultyLevel || 2,
+        difficulty_score: text.difficultyScore || 0,
+        text: text.text,
+        quiz: text.quiz || []
+      };
+
+      const { error } = await supabase.from(APPFR_TABLES.TEXTS).upsert(payload);
+      return !error;
+    } catch {
+      return false;
+    }
   },
 
   // === EXERCISE RESULTS ===
@@ -739,5 +840,6 @@ export const storage = {
     safeStorage.removeItem(USER_KEY);
     safeStorage.removeItem(RESULTS_KEY);
     safeStorage.removeItem(DAILY_KEY);
+    safeStorage.removeItem('fastread_recent_read_texts');
   }
 };

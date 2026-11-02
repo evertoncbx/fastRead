@@ -1,38 +1,31 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Play, Pause, RotateCcw, ArrowLeft, Layers, Zap, BookOpen, CheckCircle2 } from 'lucide-react';
-import { READING_LIBRARY } from '../../data/texts';
+import { Play, Pause, RotateCcw, ArrowLeft, Layers, CheckCircle2 } from 'lucide-react';
+import { READING_LIBRARY, getRandomExerciseText } from '../../data/texts';
+import { storage } from '../../services/storageService';
 import { ReadingText } from '../../types';
+import { CountdownOverlay } from './CountdownOverlay';
 import confetti from 'canvas-confetti';
 
 interface ChunkingTrainerProps {
   customText?: ReadingText;
-  onComplete?: (wpm: number, durationMinutes: number) => void;
+  onComplete?: (wpm: number, durationMinutes: number, textTitle?: string, textId?: string) => void;
   onBack?: () => void;
   isDailyStep?: boolean;
 }
 
 export const ChunkingTrainer: React.FC<ChunkingTrainerProps> = ({ customText, onComplete, onBack, isDailyStep }) => {
-  const availableTexts = useMemo(() => {
-    if (customText && !READING_LIBRARY.some(t => t.id === customText.id)) {
-      return [customText, ...READING_LIBRARY];
-    }
-    return READING_LIBRARY;
-  }, [customText]);
-
-  const [selectedTextIndex, setSelectedTextIndex] = useState<number>(() => {
-    if (customText) {
-      const idx = READING_LIBRARY.findIndex(t => t.id === customText.id);
-      return idx >= 0 ? idx : 0;
-    }
-    return 3;
+  const [currentText, setCurrentText] = useState<ReadingText>(() => {
+    if (customText) return customText;
+    const exclusions = storage.getRecentReadTexts();
+    return getRandomExerciseText(exclusions);
   });
+
   const [chunkSize, setChunkSize] = useState<number>(3);
   const [wpm, setWpm] = useState<number>(300);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [showCountdown, setShowCountdown] = useState<boolean>(false);
   const [currentChunkIndex, setCurrentChunkIndex] = useState<number>(0);
   const [isFinished, setIsFinished] = useState<boolean>(false);
-
-  const currentText = availableTexts[selectedTextIndex] || availableTexts[0];
 
   const chunks = useMemo(() => {
     const allWords = currentText.text.split(/\s+/).filter(w => w.trim().length > 0);
@@ -49,6 +42,16 @@ export const ChunkingTrainer: React.FC<ChunkingTrainerProps> = ({ customText, on
 
   const intervalMs = Math.round((chunkSize / wpm) * 60 * 1000);
 
+  const handleShuffleText = () => {
+    setIsPlaying(false);
+    setCurrentChunkIndex(0);
+    setIsFinished(false);
+    const exclusions = [currentText.id, currentText.title, ...storage.getRecentReadTexts()];
+    const nextText = getRandomExerciseText(exclusions);
+    storage.addRecentReadText(nextText.id, nextText.title);
+    setCurrentText(nextText);
+  };
+
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -59,184 +62,141 @@ export const ChunkingTrainer: React.FC<ChunkingTrainerProps> = ({ customText, on
     if (isPlaying && activeChunkRef.current && chunkContainerRef.current) {
       const container = chunkContainerRef.current;
       const element = activeChunkRef.current;
-      container.scrollTo({
-        top: element.offsetTop - container.clientHeight / 2 + element.clientHeight / 2,
-        behavior: 'smooth'
-      });
+      const containerTop = container.scrollTop;
+      const containerHeight = container.clientHeight;
+      const elementTop = element.offsetTop;
+      const elementHeight = element.offsetHeight;
+
+      if (elementTop < containerTop + 50 || elementTop + elementHeight > containerTop + containerHeight - 50) {
+        container.scrollTo({
+          top: Math.max(0, elementTop - containerHeight / 3),
+          behavior: 'smooth'
+        });
+      }
     }
   }, [currentChunkIndex, isPlaying]);
 
-  const handleStart = () => {
-    if (currentChunkIndex >= chunks.length - 1) {
-      setCurrentChunkIndex(0);
+  useEffect(() => {
+    if (isPlaying) {
+      timerRef.current = window.setInterval(() => {
+        setCurrentChunkIndex(prev => {
+          const next = prev + 1;
+          if (next >= chunks.length) {
+            if (timerRef.current) clearInterval(timerRef.current);
+            setIsPlaying(false);
+            setIsFinished(true);
+            confetti({
+              particleCount: 80,
+              spread: 60,
+              origin: { y: 0.6 }
+            });
+            return prev;
+          }
+          return next;
+        });
+      }, intervalMs);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
     }
-    setIsPlaying(true);
-    setIsFinished(false);
 
-    timerRef.current = window.setInterval(() => {
-      setCurrentChunkIndex(prev => {
-        const next = prev + 1;
-        if (next >= chunks.length) {
-          if (timerRef.current) clearInterval(timerRef.current);
-          setIsPlaying(false);
-          setIsFinished(true);
-          confetti({
-            particleCount: 70,
-            spread: 60,
-            origin: { y: 0.6 }
-          });
-          return chunks.length - 1;
-        }
-        return next;
-      });
-    }, intervalMs);
-  };
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isPlaying, intervalMs, chunks.length]);
 
-  const handleStop = () => {
-    setIsPlaying(false);
-    if (timerRef.current) clearInterval(timerRef.current);
+  const handlePlayPause = () => {
+    if (isPlaying) {
+      setIsPlaying(false);
+      return;
+    }
+
+    if (isFinished) {
+      setCurrentChunkIndex(0);
+      setIsFinished(false);
+    }
+    setShowCountdown(true);
   };
 
   const handleReset = () => {
-    handleStop();
+    setIsPlaying(false);
+    setShowCountdown(false);
     setCurrentChunkIndex(0);
     setIsFinished(false);
+    if (chunkContainerRef.current) {
+      chunkContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   return (
-    <div className="flex flex-col min-h-full max-w-lg mx-auto p-4 pb-24 text-stone-800">
+    <div className="flex flex-col min-h-full max-w-lg mx-auto p-4 pb-32 text-[#131F24]">
+      {/* Contador Regressivo de 3 Segundos */}
+      <CountdownOverlay
+        isActive={showCountdown}
+        onComplete={() => {
+          setShowCountdown(false);
+          setIsPlaying(true);
+        }}
+        title="Leitura em Blocos"
+      />
+
       {/* Top bar */}
       <div className="flex items-center justify-between mb-4">
         {onBack ? (
           <button
             onClick={onBack}
-            className="flex items-center gap-1.5 text-sm text-stone-600 hover:text-stone-900 transition-colors py-1 px-2.5 rounded-lg bg-white border border-stone-200 shadow-2xs"
+            className="btn-duo-white py-2.5 px-4 text-base font-black flex items-center gap-2 cursor-pointer"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-5 h-5 stroke-[2.5]" />
             <span>Voltar</span>
           </button>
         ) : <div />}
       </div>
 
       {/* Header Info */}
-      <div className="bg-white p-4 rounded-2xl border border-stone-200 mb-4 shadow-xs">
-        <div className="flex items-center gap-2.5 mb-1.5">
-          <div className="w-9 h-9 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-700">
-            <Layers className="w-5 h-5" />
+      <div className="card-duo p-5 mb-4 space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-[#F6E8FF] border-2 border-[#E4B8FF] flex items-center justify-center text-[#A559D9]">
+              <Layers className="w-7 h-7 stroke-[2.5]" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black text-[#131F24]">
+                Leitura em Blocos
+              </h2>
+            </div>
           </div>
-          <div>
-            <h2 className="text-lg font-bold text-stone-900 flex items-center gap-2">
-              Leitura em Blocos (Chunking)
-              {isDailyStep && <span className="text-xs bg-teal-50 text-teal-700 border border-teal-200 px-2 py-0.5 rounded-full font-medium">Jornada</span>}
-            </h2>
-            <p className="text-xs text-stone-500">Expansão de fixação ocular e agrupamento de sintagmas</p>
-          </div>
-        </div>
 
-        {/* Dica da técnica */}
-        <div className="mt-3 bg-teal-50/80 p-2.5 rounded-xl border border-teal-200 text-xs text-teal-900 flex items-start gap-2">
-          <Zap className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
-          <span>
-            <strong className="text-teal-950">Instrução:</strong> Em vez de olhar para cada palavra individualmente, foque seus olhos no meio de cada <span className="text-teal-700 font-bold">bloco destacado</span>, absorvendo o grupo como uma única unidade conceitual.
+          <span className="text-base font-black bg-[#F6E8FF] text-[#A559D9] border-2 border-[#E4B8FF] px-4 py-1.5 rounded-full font-mono">
+            {wpm} PPM
           </span>
         </div>
-      </div>
 
-      {/* Seletor de Textos */}
-      <div className="mb-3.5 bg-white border-2 border-stone-200 p-3.5 rounded-2xl shadow-xs">
-        <label className="text-xs uppercase tracking-wider text-stone-600 font-bold block mb-1.5 flex items-center gap-2">
-          <BookOpen className="w-4 h-4 text-emerald-600" />
-          Texto de Treino:
-        </label>
-        <select
-          value={selectedTextIndex}
-          disabled={isPlaying}
-          onChange={(e) => {
-            setSelectedTextIndex(Number(e.target.value));
-            handleReset();
-          }}
-          className="w-full bg-stone-50 border-2 border-stone-200 rounded-xl py-2.5 px-3 text-xs sm:text-sm text-stone-800 font-bold focus:bg-white focus:outline-none focus:border-teal-500 cursor-pointer"
-        >
-          {availableTexts.map((item, idx) => (
-            <option key={item.id} value={idx}>
-              {item.title} ({item.author})
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Controles de Configuração */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        {/* Tamanho do Bloco */}
-        <div className="bg-white border-2 border-stone-200 p-3.5 rounded-2xl shadow-xs">
-          <span className="text-xs uppercase tracking-wider text-stone-600 block font-bold mb-2">Bloco Ocular</span>
-          <div className="flex gap-1.5">
-            {[2, 3, 4].map((size) => (
-              <button
-                key={size}
-                disabled={isPlaying}
-                onClick={() => {
-                  setChunkSize(size);
-                  handleReset();
-                }}
-                className={`flex-1 py-2 px-1 text-xs font-black rounded-xl transition-all cursor-pointer ${
-                  chunkSize === size
-                    ? 'bg-teal-600 text-white shadow-xs'
-                    : 'bg-stone-100 text-stone-700 hover:text-stone-900 border border-stone-200'
-                }`}
-              >
-                {size} pal.
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Velocidade PPM */}
-        <div className="bg-white border-2 border-stone-200 p-3.5 rounded-2xl shadow-xs">
-          <span className="text-xs uppercase tracking-wider text-stone-600 block font-bold mb-1">Velocidade</span>
-          <span className="text-2xl font-black text-stone-900 font-mono">{wpm} <span className="text-xs text-teal-700 font-bold">PPM</span></span>
+        <div className="pt-2 border-t-2 border-stone-100 flex items-center justify-between text-sm font-bold text-stone-500">
+          <span className="truncate pr-2 font-black text-[#131F24] text-base">{currentText.title}</span>
+          <span className="shrink-0 font-mono text-sm">{currentChunkIndex + 1} de {chunks.length}</span>
         </div>
       </div>
 
-      {/* Slider de Velocidade */}
-      <div className="bg-white border-2 border-stone-200 p-4 rounded-2xl mb-4 shadow-xs">
-        <input
-          type="range"
-          min="180"
-          max="600"
-          step="20"
-          value={wpm}
-          disabled={isPlaying}
-          onChange={(e) => setWpm(Number(e.target.value))}
-          className="w-full accent-teal-600 bg-stone-100 h-2.5 rounded-lg cursor-pointer"
-        />
-        <div className="flex justify-between text-xs text-stone-500 font-mono font-bold mt-2">
-          <span>180 PPM (Leve)</span>
-          <span>350 PPM (Acelerado)</span>
-          <span>600 PPM (Turbo)</span>
-        </div>
-      </div>
-
-      {/* Coluna Centralizada de Blocos de Leitura */}
-      <div className="relative bg-[#FCFBF8] border border-stone-200 rounded-2xl shadow-xs overflow-hidden mb-4 flex-1 min-h-[220px] max-h-[340px] flex flex-col">
-        <div
-          ref={chunkContainerRef}
-          className="p-5 overflow-y-auto space-y-3.5 flex flex-col items-center font-reading"
-        >
+      {/* ÁREA DE LEITURA EM BLOCOS COM TIPOGRAFIA GRANDE */}
+      <div
+        ref={chunkContainerRef}
+        className="card-duo p-6 sm:p-8 bg-white min-h-[320px] max-h-[50vh] overflow-y-auto mb-4 font-reading text-2xl sm:text-3xl leading-relaxed text-[#131F24] select-none"
+      >
+        <div className="flex flex-col gap-3.5 items-center text-center">
           {chunks.map((chunk, idx) => {
-            const isCurrent = idx === currentChunkIndex;
+            const isActive = idx === currentChunkIndex;
             const isPast = idx < currentChunkIndex;
 
             return (
               <div
                 key={idx}
-                ref={isCurrent ? activeChunkRef : null}
-                className={`py-2 px-4 rounded-xl text-center font-medium transition-all duration-150 max-w-[280px] w-full ${
-                  isCurrent
-                    ? 'bg-teal-600 text-white font-bold text-lg scale-105 shadow-xs ring-2 ring-teal-400'
+                ref={isActive ? activeChunkRef : null}
+                className={`py-2.5 px-5 rounded-2xl transition-all ${
+                  isActive
+                    ? 'bg-[#F6E8FF] text-[#A559D9] border-2 border-[#CE82FF] font-black scale-105 shadow-sm'
                     : isPast
-                    ? 'text-stone-300 text-sm opacity-60'
-                    : 'text-stone-700 text-sm'
+                    ? 'text-stone-300 font-medium'
+                    : 'text-stone-700 font-medium'
                 }`}
               >
                 {chunk}
@@ -244,59 +204,84 @@ export const ChunkingTrainer: React.FC<ChunkingTrainerProps> = ({ customText, on
             );
           })}
         </div>
+      </div>
 
-        {/* Overlay se concluído */}
-        {isFinished && (
-          <div className="absolute inset-0 bg-white/95 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center z-20">
-            <div className="w-12 h-12 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 mb-2">
-              <CheckCircle2 className="w-6 h-6" />
-            </div>
-            <h3 className="text-base font-bold text-stone-900 mb-1">Treino em Blocos Concluído!</h3>
-            <p className="text-xs text-stone-500 mb-3">Sua fóvea ocular foi exercitada para capturar {chunkSize} palavras por fixação.</p>
-            {onComplete && (
+      {/* Controles de Tamanho do Bloco e Velocidade */}
+      <div className="card-duo p-5 mb-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-black uppercase text-stone-400">Palavras por Bloco</span>
+          <div className="flex gap-2">
+            {[2, 3, 4].map((size) => (
               <button
-                onClick={() => onComplete(wpm, Math.max(1, Math.round((chunks.length * chunkSize) / wpm)))}
-                className="py-2.5 px-6 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center gap-2 shadow-xs transition-all"
+                key={size}
+                onClick={() => setChunkSize(size)}
+                className={`py-1.5 px-3.5 rounded-xl text-sm font-black transition-all cursor-pointer ${
+                  chunkSize === size
+                    ? 'bg-[#CE82FF] border-b-2 border-[#A559D9] text-white'
+                    : 'btn-duo-white'
+                }`}
               >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Continuar</span>
+                {size} palavras
               </button>
-            )}
+            ))}
           </div>
-        )}
+        </div>
+
+        <div className="pt-2 border-t-2 border-stone-100 flex items-center justify-between">
+          <span className="text-sm font-black uppercase text-stone-400">Velocidade</span>
+          <span className="text-2xl font-black text-[#A559D9] font-mono">{wpm} PPM</span>
+        </div>
+
+        <input
+          type="range"
+          min="150"
+          max="600"
+          step="25"
+          value={wpm}
+          onChange={(e) => setWpm(Number(e.target.value))}
+          className="w-full accent-[#CE82FF] h-3.5 bg-stone-100 rounded-lg cursor-pointer"
+        />
       </div>
 
       {/* Botões de Ação */}
-      <div className="flex gap-2">
+      <div className="flex items-center gap-3">
         <button
-          onClick={isPlaying ? handleStop : handleStart}
-          className={`flex-1 py-3.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-xs ${
-            isPlaying
-              ? 'bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-200'
-              : 'bg-teal-600 hover:bg-teal-700 text-white'
+          onClick={handleReset}
+          title="Reiniciar"
+          className="p-4.5 btn-duo-white flex items-center justify-center shrink-0 cursor-pointer"
+        >
+          <RotateCcw className="w-6 h-6 stroke-[2.5]" />
+        </button>
+
+        <button
+          onClick={handlePlayPause}
+          className={`flex-1 py-4.5 px-6 text-xl font-black flex items-center justify-center gap-2 cursor-pointer ${
+            isPlaying ? 'btn-duo-yellow' : 'btn-duo-purple'
           }`}
         >
           {isPlaying ? (
             <>
-              <Pause className="w-5 h-5 fill-current" />
+              <Pause className="w-7 h-7 fill-current" />
               <span>Pausar</span>
             </>
           ) : (
             <>
-              <Play className="w-5 h-5 fill-current" />
-              <span>Iniciar Blocos ({wpm} PPM)</span>
+              <Play className="w-7 h-7 fill-current" />
+              <span>{isFinished ? 'Reiniciar' : 'Começar'}</span>
             </>
           )}
         </button>
-
-        <button
-          onClick={handleReset}
-          aria-label="Reiniciar"
-          className="p-3.5 rounded-xl bg-white border border-stone-200 text-stone-600 hover:text-stone-900 hover:bg-stone-50 transition-colors shadow-2xs"
-        >
-          <RotateCcw className="w-5 h-5" />
-        </button>
       </div>
+
+      {isFinished && onComplete && (
+        <button
+          onClick={() => onComplete(wpm, 3, currentText.title, currentText.id)}
+          className="w-full mt-4 py-4.5 px-6 btn-duo-green text-lg font-black flex items-center justify-center gap-2 cursor-pointer animate-in fade-in"
+        >
+          <CheckCircle2 className="w-6 h-6 stroke-[2.5]" />
+          <span>Salvar Resultado do Treino</span>
+        </button>
+      )}
     </div>
   );
 };

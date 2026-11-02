@@ -1,40 +1,32 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Play, Pause, RotateCcw, FastForward, Rewind, Volume2, VolumeX, ArrowLeft, Zap, BookOpen, CheckCircle2 } from 'lucide-react';
+import { Play, Pause, RotateCcw, FastForward, Rewind, Volume2, VolumeX, ArrowLeft, Trophy, CheckCircle2 } from 'lucide-react';
 import { audio } from '../../services/audioService';
-import { READING_LIBRARY } from '../../data/texts';
+import { READING_LIBRARY, getRandomExerciseText } from '../../data/texts';
+import { storage } from '../../services/storageService';
 import { ReadingText } from '../../types';
+import { CountdownOverlay } from './CountdownOverlay';
 import confetti from 'canvas-confetti';
 
 interface RSVPReaderProps {
   customText?: ReadingText;
-  onComplete?: (wpm: number, durationMinutes: number) => void;
+  onComplete?: (wpm: number, durationMinutes: number, textTitle?: string, textId?: string) => void;
   onBack?: () => void;
   isDailyStep?: boolean;
 }
 
 export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, onBack, isDailyStep }) => {
-  const availableTexts = useMemo(() => {
-    if (customText && !READING_LIBRARY.some(t => t.id === customText.id)) {
-      return [customText, ...READING_LIBRARY];
-    }
-    return READING_LIBRARY;
-  }, [customText]);
-
-  const [selectedTextIndex, setSelectedTextIndex] = useState<number>(() => {
-    if (customText) {
-      const foundIdx = READING_LIBRARY.findIndex(t => t.id === customText.id);
-      return foundIdx >= 0 ? foundIdx : 0;
-    }
-    return 2;
+  const [currentText, setCurrentText] = useState<ReadingText>(() => {
+    if (customText) return customText;
+    const exclusions = storage.getRecentReadTexts();
+    return getRandomExerciseText(exclusions);
   });
 
   const [wpm, setWpm] = useState<number>(350); // 200 a 800 PPM
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [showCountdown, setShowCountdown] = useState<boolean>(false);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [isFinished, setIsFinished] = useState<boolean>(false);
   const [soundOn, setSoundOn] = useState<boolean>(false);
-
-  const currentText = availableTexts[selectedTextIndex] || availableTexts[0];
 
   const words = useMemo(() => {
     return currentText.text.split(/\s+/).filter(w => w.trim().length > 0);
@@ -48,7 +40,18 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
   const wordsRef = useRef(words);
   wordsRef.current = words;
 
-  // Calcula o Ponto Ótimo de Reconhecimento (ORP - Optimal Recognition Point)
+  // Trocar para outro texto aleatório evitando repetições
+  const handleShuffleText = () => {
+    setIsPlaying(false);
+    setCurrentIndex(0);
+    setIsFinished(false);
+    const exclusions = [currentText.id, currentText.title, ...storage.getRecentReadTexts()];
+    const nextText = getRandomExerciseText(exclusions);
+    storage.addRecentReadText(nextText.id, nextText.title);
+    setCurrentText(nextText);
+  };
+
+  // Ponto Ótimo de Reconhecimento (ORP - Optimal Recognition Point)
   const currentWordParts = useMemo(() => {
     if (words.length === 0 || currentIndex >= words.length) {
       return { prefix: '', orp: '', suffix: '' };
@@ -71,248 +74,165 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
     };
   }, [words, currentIndex]);
 
-  // Calcula a escala da fonte dinamicamente para que palavras longas (ex: "confidenciou-me") nunca quebrem ou estourem o visor
-  const currentWordLength = useMemo(() => {
-    return (currentWordParts.prefix + currentWordParts.orp + currentWordParts.suffix).length;
-  }, [currentWordParts]);
-
-  const orpFontSizeClass = useMemo(() => {
-    if (currentWordLength <= 7) return 'text-3xl sm:text-4xl';
-    if (currentWordLength <= 11) return 'text-2xl sm:text-3xl';
-    if (currentWordLength <= 15) return 'text-xl sm:text-2xl';
-    return 'text-lg sm:text-xl';
-  }, [currentWordLength]);
-
-  const getWordDelay = (word: string) => {
-    const baseDelay = (60 / wpmRef.current) * 1000;
-    if (/[.?!]$/.test(word)) {
-      return baseDelay * 1.5;
-    }
-    if (/[,;:]$/.test(word)) {
-      return baseDelay * 1.25;
-    }
-    return baseDelay;
-  };
-
   useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, []);
+    if (isPlaying) {
+      const intervalMs = Math.round((60 / wpm) * 1000);
+      timerRef.current = window.setInterval(() => {
+        setCurrentIndex(prev => {
+          const next = prev + 1;
+          if (next >= wordsRef.current.length) {
+            if (timerRef.current) clearInterval(timerRef.current);
+            setIsPlaying(false);
+            setIsFinished(true);
+            audio.playSuccess();
+            confetti({
+              particleCount: 80,
+              spread: 60,
+              origin: { y: 0.6 }
+            });
+            return prev;
+          }
+          if (soundOnRef.current && next % 5 === 0) {
+            audio.playClick();
+          }
+          return next;
+        });
+      }, intervalMs);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
 
-  const scheduleNextWord = (nextIndex: number) => {
-    const currentWords = wordsRef.current;
-    if (nextIndex >= currentWords.length) {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isPlaying, wpm]);
+
+  const handlePlayPause = () => {
+    if (isPlaying) {
       setIsPlaying(false);
-      setIsFinished(true);
-      audio.playSuccess();
-      confetti({
-        particleCount: 80,
-        spread: 60,
-        origin: { y: 0.6 }
-      });
       return;
     }
 
-    const currentWord = currentWords[nextIndex] || '';
-    const delay = getWordDelay(currentWord);
-
-    timerRef.current = window.setTimeout(() => {
-      if (soundOnRef.current) audio.playClick();
-      setCurrentIndex(nextIndex);
-      scheduleNextWord(nextIndex + 1);
-    }, delay);
-  };
-
-  const handlePlay = () => {
-    if (words.length === 0) return;
-    let startIdx = currentIndex;
-    if (isFinished || startIdx >= words.length - 1) {
-      startIdx = 0;
+    if (isFinished) {
       setCurrentIndex(0);
+      setIsFinished(false);
     }
-    setIsPlaying(true);
-    setIsFinished(false);
-
-    const currentWord = words[startIdx] || '';
-    const delay = getWordDelay(currentWord);
-    timerRef.current = window.setTimeout(() => {
-      if (soundOnRef.current) audio.playClick();
-      const nextIdx = startIdx + 1;
-      if (nextIdx < words.length) {
-        setCurrentIndex(nextIdx);
-        scheduleNextWord(nextIdx + 1);
-      } else {
-        scheduleNextWord(nextIdx);
-      }
-    }, delay);
-  };
-
-  const handlePause = () => {
-    setIsPlaying(false);
-    if (timerRef.current) clearTimeout(timerRef.current);
+    setShowCountdown(true);
   };
 
   const handleReset = () => {
-    handlePause();
+    setIsPlaying(false);
+    setShowCountdown(false);
     setCurrentIndex(0);
     setIsFinished(false);
   };
 
-  const handleJump = (delta: number) => {
-    const newIdx = Math.max(0, Math.min(words.length - 1, currentIndex + delta));
-    setCurrentIndex(newIdx);
-    if (isPlaying) {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      scheduleNextWord(newIdx);
-    }
+  const handleSeek = (delta: number) => {
+    setCurrentIndex(prev => Math.max(0, Math.min(words.length - 1, prev + delta)));
   };
 
-  const toggleSound = () => {
-    const s = audio.toggleSound();
-    setSoundOn(s);
-  };
-
-  const progressPercentage = Math.round(((currentIndex + 1) / words.length) * 100) || 0;
+  const progressPercent = words.length > 0 ? Math.round((currentIndex / words.length) * 100) : 0;
 
   return (
-    <div className="flex flex-col min-h-full max-w-lg mx-auto p-4 pb-24 text-stone-800">
+    <div className="flex flex-col min-h-full max-w-lg mx-auto p-4 pb-32 text-[#131F24]">
+      {/* Contador Regressivo de 3 Segundos */}
+      <CountdownOverlay
+        isActive={showCountdown}
+        onComplete={() => {
+          setShowCountdown(false);
+          setIsPlaying(true);
+        }}
+        title="Leitor RSVP Turbo"
+      />
+
       {/* Top bar */}
       <div className="flex items-center justify-between mb-4">
         {onBack ? (
           <button
             onClick={onBack}
-            className="flex items-center gap-1.5 text-sm text-stone-600 hover:text-stone-900 transition-colors py-1 px-2.5 rounded-lg bg-white border border-stone-200 shadow-2xs"
+            className="btn-duo-white py-2.5 px-4 text-base font-black flex items-center gap-2 cursor-pointer"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-5 h-5 stroke-[2.5]" />
             <span>Voltar</span>
           </button>
         ) : <div />}
 
         <div className="flex items-center gap-2">
           <button
-            onClick={toggleSound}
+            onClick={() => setSoundOn(prev => !prev)}
             aria-label="Alternar som"
-            className="p-2 rounded-lg bg-white border border-stone-200 text-stone-600 hover:text-stone-900 shadow-2xs transition-colors"
+            className="p-2.5 rounded-2xl bg-white border-2 border-stone-200 border-b-4 border-b-stone-300 text-stone-600 cursor-pointer"
           >
-            {soundOn ? <Volume2 className="w-4 h-4 text-emerald-600" /> : <VolumeX className="w-4 h-4 text-stone-400" />}
+            {soundOn ? <Volume2 className="w-5 h-5 text-[#58CC02]" /> : <VolumeX className="w-5 h-5 text-stone-400" />}
           </button>
         </div>
       </div>
 
       {/* Header Info */}
-      <div className="bg-white p-4 rounded-2xl border border-stone-200 mb-4 shadow-xs">
-        <div className="flex items-center gap-2.5 mb-1.5">
-          <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700">
-            <Zap className="w-5 h-5" />
+      <div className="card-duo p-5 mb-4 space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-[#DDF4FF] border-2 border-[#B0E4FF] flex items-center justify-center text-[#1899D6]">
+              <Trophy className="w-7 h-7 stroke-[2.5]" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black text-[#131F24]">
+                RSVP Turbo
+              </h2>
+            </div>
           </div>
-          <div>
-            <h2 className="text-lg font-bold text-stone-900 flex items-center gap-2">
-              Leitor RSVP com Ponto Focal (ORP)
-              {isDailyStep && <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full font-medium">Jornada</span>}
-            </h2>
-            <p className="text-xs text-stone-500">Elimina movimentos sacádicos e acelera a captação visual</p>
-          </div>
-        </div>
 
-        {/* Dica da técnica */}
-        <div className="mt-3 bg-blue-50/80 p-2.5 rounded-xl border border-blue-200 text-xs text-blue-900 flex items-start gap-2">
-          <Zap className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-          <span>
-            <strong className="text-blue-950">Como Funciona:</strong> Fixe o olhar na <span className="text-rose-600 font-bold">letra destacada em vermelho</span> entre as guias. Seus olhos não precisam se mover — o cérebro processa o conceito instantaneamente.
+          <span className="text-base font-black bg-[#DDF4FF] text-[#1899D6] border-2 border-[#B0E4FF] px-4 py-1.5 rounded-full font-mono">
+            {wpm} PPM
           </span>
         </div>
+
+        <div className="pt-2 border-t-2 border-stone-100 flex items-center justify-between text-sm font-bold text-stone-500">
+          <span className="truncate pr-2 font-black text-[#131F24] text-base">{currentText.title}</span>
+          <span className="shrink-0 font-mono text-sm">{currentIndex + 1} de {words.length}</span>
+        </div>
       </div>
 
-      {/* Seletor de Textos */}
-      <div className="mb-3.5 bg-white border-2 border-stone-200 p-3.5 rounded-2xl shadow-xs">
-        <label className="text-xs uppercase tracking-wider text-stone-600 font-bold block mb-1.5 flex items-center gap-2">
-          <BookOpen className="w-4 h-4 text-emerald-600" />
-          Obra em Domínio Público:
-        </label>
-        <select
-          value={selectedTextIndex}
-          disabled={isPlaying}
-          onChange={(e) => {
-            setSelectedTextIndex(Number(e.target.value));
-            handleReset();
-          }}
-          className="w-full bg-stone-50 border border-stone-200 rounded-lg py-1.5 px-3 text-xs text-stone-800 font-medium focus:bg-white focus:outline-none focus:border-emerald-500"
-        >
-          {availableTexts.map((item, idx) => (
-            <option key={item.id} value={idx}>
-              {item.title} — {item.author} ({item.wordCount} palavras)
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* TELA PRINCIPAL RSVP: Palavra Gigante com Ponto Focal */}
+      <div className="relative card-duo p-8 sm:p-14 min-h-[240px] sm:min-h-[280px] flex flex-col items-center justify-center bg-white mb-4">
+        {/* Marcadores Visuais Centrais */}
+        <div className="absolute top-4 w-5 h-2 bg-[#FF4B4B] rounded-full" />
+        <div className="absolute bottom-4 w-5 h-2 bg-[#FF4B4B] rounded-full" />
 
-      {/* Visor RSVP (Optimal Recognition Point / ORP Visualizer) */}
-      <div className="relative bg-white border-2 border-stone-200 rounded-3xl py-8 px-3 sm:px-6 mb-4 shadow-xs flex flex-col items-center justify-center min-h-[190px] overflow-hidden">
-        {/* Guias verticais de alinhamento óptico */}
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-0.5 h-4 bg-rose-500 rounded-full" />
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-0.5 h-4 bg-rose-500 rounded-full" />
-
-        {/* Linha guia foveal sutil */}
-        <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 h-[1px] bg-stone-200 pointer-events-none" />
-
-        {/* Container da Palavra com Alinhamento Estrito no ORP sem quebra de linha */}
-        <div className={`relative z-10 flex items-center justify-center w-full font-mono ${orpFontSizeClass} select-none whitespace-nowrap`}>
-          <div className="w-1/2 text-right text-stone-900 font-medium tracking-normal pr-[2px] whitespace-nowrap overflow-visible">
-            {currentWordParts.prefix}
+        {isFinished ? (
+          <div className="text-center space-y-2 animate-in zoom-in-95">
+            <CheckCircle2 className="w-16 h-16 text-[#58CC02] stroke-[2.5] mx-auto" />
+            <h3 className="text-3xl font-black text-[#131F24]">Texto Concluído!</h3>
+            <p className="text-base font-bold text-stone-400">Velocidade média: {wpm} PPM</p>
           </div>
-
-          <div className="text-rose-600 font-black scale-110 px-1 bg-rose-50 rounded-md shrink-0 whitespace-nowrap">
-            {currentWordParts.orp}
-          </div>
-
-          <div className="w-1/2 text-left text-stone-900 font-medium tracking-normal pl-[2px] whitespace-nowrap overflow-visible">
-            {currentWordParts.suffix}
-          </div>
-        </div>
-
-        {/* Progresso de Palavras */}
-        <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-xs font-mono font-bold text-stone-500">
-          <span>{currentIndex + 1} de {words.length} palavras</span>
-          <span>{progressPercentage}%</span>
-        </div>
-
-        {/* Overlay se concluído */}
-        {isFinished && (
-          <div className="absolute inset-0 bg-white/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center z-20">
-            <div className="w-12 h-12 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 mb-2">
-              <CheckCircle2 className="w-6 h-6" />
-            </div>
-            <h3 className="text-base font-bold text-stone-900 mb-1">Leitura RSVP Concluída!</h3>
-            <p className="text-xs text-stone-500 mb-3">Velocidade mantida: {wpm} PPM.</p>
-            {onComplete && (
-              <button
-                onClick={() => onComplete(wpm, Math.max(1, Math.round(words.length / wpm)))}
-                className="py-2.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 shadow-xs transition-all"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Continuar Jornada</span>
-              </button>
-            )}
+        ) : (
+          <div className="font-mono text-5xl sm:text-7xl font-black tracking-wide select-none flex items-baseline justify-center">
+            <span className="text-right text-[#131F24] w-[4.5ch]">
+              {currentWordParts.prefix}
+            </span>
+            <span className="text-[#FF4B4B] font-black underline decoration-4 decoration-[#FF4B4B] px-0.5">
+              {currentWordParts.orp}
+            </span>
+            <span className="text-left text-[#131F24] w-[4.5ch]">
+              {currentWordParts.suffix}
+            </span>
           </div>
         )}
-      </div>
 
-      {/* Barra de Progresso Interativa */}
-      <div className="w-full bg-stone-100 h-2 rounded-full overflow-hidden mb-4 border border-stone-200">
-        <div
-          className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full transition-all duration-150"
-          style={{ width: `${progressPercentage}%` }}
-        />
+        {/* Barra de Progresso Interna */}
+        <div className="absolute bottom-0 inset-x-0 h-2.5 bg-stone-100 overflow-hidden rounded-b-[1.5rem]">
+          <div
+            className="bg-[#58CC02] h-full transition-all duration-150"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
       </div>
 
       {/* Controles de Velocidade (PPM) */}
-      <div className="bg-white border border-stone-200 p-3.5 rounded-2xl mb-4 shadow-xs">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs text-stone-600 font-medium">Velocidade de Exibição</span>
-          <span className="text-xl font-black text-emerald-700 font-mono">
-            {wpm} <span className="text-xs font-semibold text-stone-400">PPM</span>
-          </span>
+      <div className="card-duo p-5 mb-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-black uppercase text-stone-400">Velocidade do Treino</span>
+          <span className="text-2xl font-black text-[#1899D6] font-mono">{wpm} PPM</span>
         </div>
 
         <input
@@ -322,63 +242,81 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
           step="25"
           value={wpm}
           onChange={(e) => setWpm(Number(e.target.value))}
-          className="w-full accent-emerald-600 bg-stone-100 h-2 rounded-lg cursor-pointer"
+          className="w-full accent-[#1CB0F6] h-3.5 bg-stone-100 rounded-lg cursor-pointer"
         />
 
-        <div className="flex justify-between text-xs text-stone-500 font-mono font-bold mt-2">
-          <span>200 PPM (Médio)</span>
-          <span>450 PPM (Avançado)</span>
-          <span>800 PPM (Turbo)</span>
+        <div className="flex justify-between gap-2">
+          {[250, 350, 450, 600].map((preset) => (
+            <button
+              key={preset}
+              onClick={() => setWpm(preset)}
+              className={`flex-1 py-2 rounded-2xl text-sm font-black transition-all cursor-pointer ${
+                wpm === preset
+                  ? 'bg-[#1CB0F6] border-b-2 border-[#1899D6] text-white'
+                  : 'btn-duo-white'
+              }`}
+            >
+              {preset} PPM
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Botões de Navegação e Reprodução Estilo Duolingo */}
-      <div className="flex items-center justify-center gap-2.5">
+      {/* Botões Principais de Navegação e Play */}
+      <div className="flex items-center gap-3">
         <button
-          onClick={() => handleJump(-10)}
-          aria-label="Voltar 10 palavras"
-          className="p-3.5 rounded-2xl bg-white border-2 border-stone-200 text-stone-700 hover:text-stone-900 shadow-xs active:scale-98 transition-all cursor-pointer"
+          onClick={() => handleSeek(-10)}
+          title="Recuar 10 palavras"
+          className="p-4.5 btn-duo-white flex items-center justify-center shrink-0 cursor-pointer"
         >
-          <Rewind className="w-5 h-5" />
+          <Rewind className="w-6 h-6 stroke-[2.5]" />
         </button>
 
         <button
-          onClick={isPlaying ? handlePause : handlePlay}
-          className={`flex-1 py-4 px-6 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-md border-b-4 transition-all cursor-pointer active:scale-98 ${
-            isPlaying
-              ? 'bg-stone-100 hover:bg-stone-200 text-stone-800 border-stone-300'
-              : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-800'
+          onClick={handlePlayPause}
+          className={`flex-1 py-4.5 px-6 text-xl font-black flex items-center justify-center gap-2 cursor-pointer ${
+            isPlaying ? 'btn-duo-yellow' : 'btn-duo-green'
           }`}
         >
           {isPlaying ? (
             <>
-              <Pause className="w-5 h-5 fill-current" />
+              <Pause className="w-7 h-7 fill-current" />
               <span>Pausar</span>
             </>
           ) : (
             <>
-              <Play className="w-5 h-5 fill-current" />
-              <span>{currentIndex > 0 ? 'Continuar Leitura' : 'Iniciar Leitura'}</span>
+              <Play className="w-7 h-7 fill-current" />
+              <span>{isFinished ? 'Reiniciar' : 'Começar'}</span>
             </>
           )}
         </button>
 
         <button
-          onClick={() => handleJump(10)}
-          aria-label="Avançar 10 palavras"
-          className="p-3.5 rounded-2xl bg-white border-2 border-stone-200 text-stone-700 hover:text-stone-900 shadow-xs active:scale-98 transition-all cursor-pointer"
+          onClick={() => handleSeek(10)}
+          title="Avançar 10 palavras"
+          className="p-4.5 btn-duo-white flex items-center justify-center shrink-0 cursor-pointer"
         >
-          <FastForward className="w-5 h-5" />
+          <FastForward className="w-6 h-6 stroke-[2.5]" />
         </button>
 
         <button
           onClick={handleReset}
-          aria-label="Reiniciar leitura"
-          className="p-3.5 rounded-2xl bg-white border-2 border-stone-200 text-stone-700 hover:text-stone-900 shadow-xs active:scale-98 transition-all cursor-pointer"
+          title="Voltar ao início"
+          className="p-4.5 btn-duo-white flex items-center justify-center shrink-0 cursor-pointer"
         >
-          <RotateCcw className="w-5 h-5" />
+          <RotateCcw className="w-6 h-6 stroke-[2.5]" />
         </button>
       </div>
+
+      {isFinished && onComplete && (
+        <button
+          onClick={() => onComplete(wpm, 3, currentText.title, currentText.id)}
+          className="w-full mt-4 py-4.5 px-6 btn-duo-green text-lg font-black flex items-center justify-center gap-2 cursor-pointer animate-in fade-in"
+        >
+          <CheckCircle2 className="w-6 h-6 stroke-[2.5]" />
+          <span>Salvar Resultado do Treino</span>
+        </button>
+      )}
     </div>
   );
 };

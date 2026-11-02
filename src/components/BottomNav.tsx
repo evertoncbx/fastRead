@@ -19,7 +19,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onChangeTab, da
   ];
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t-2 border-stone-200 shadow-lg px-2 py-2 pb-safe">
+    <nav className="fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t-2 border-stone-200 px-2 py-2">
       <div className="max-w-lg mx-auto flex items-center justify-around">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -31,24 +31,27 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onChangeTab, da
               onClick={() => onChangeTab(tab.id)}
               className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all relative cursor-pointer ${
                 isActive
-                  ? 'text-emerald-700 font-black'
-                  : 'text-stone-500 hover:text-stone-800 font-semibold'
+                  ? 'text-[#58CC02]'
+                  : 'text-stone-400 hover:text-stone-700'
               }`}
             >
               <div className="relative">
-                <Icon className={`w-6 h-6 transition-transform ${isActive ? 'scale-110 text-emerald-700' : 'text-stone-500'}`} />
+                <div
+                  className={`p-1.5 rounded-2xl transition-all ${
+                    isActive ? 'bg-[#D7FFB8] scale-110 shadow-xs' : ''
+                  }`}
+                >
+                  <Icon className={`w-7 h-7 stroke-[2.5] ${isActive ? 'text-[#46A302]' : 'text-stone-400'}`} />
+                </div>
                 {tab.badge && (
-                  <span className="absolute -top-1.5 -right-3.5 bg-emerald-600 text-white text-xs font-black px-1.5 py-0.2 rounded-full font-mono border border-white shadow-xs">
+                  <span className="absolute -top-1 -right-2 bg-[#58CC02] text-white text-xs font-black px-2 py-0.5 rounded-full border-2 border-white shadow-xs">
                     {tab.badge}
                   </span>
                 )}
               </div>
-              <span className={`text-xs mt-1 tracking-tight ${isActive ? 'font-black' : 'font-semibold'}`}>
+              <span className={`text-sm mt-1 tracking-tight ${isActive ? 'font-black text-[#46A302]' : 'font-bold'}`}>
                 {tab.label}
               </span>
-              {isActive && (
-                <div className="w-2 h-2 rounded-full bg-emerald-600 mt-1" />
-              )}
             </button>
           );
         })}

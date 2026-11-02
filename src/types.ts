@@ -34,6 +34,8 @@ export interface ReadingText {
   text: string;
   wordCount: number;
   estimatedMinutes: number;
+  difficultyLevel?: number; // 1 (Iniciante) a 5 (Avançado)
+  difficultyScore?: number; // Pontuação algorítmica de vocabulário e sintaxe
   quiz?: QuizQuestion[];
 }
 

@@ -8,7 +8,42 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Paleta Editorial Suave (Livro, Papel, Cognição e Aprendizagem)
+        // Paleta Duolingo (Feather Design System)
+        duo: {
+          green: '#58CC02',
+          'green-dark': '#46A302',
+          'green-light': '#D7FFB8',
+          'green-subtle': '#EAF9DD',
+          blue: '#1CB0F6',
+          'blue-dark': '#1899D6',
+          'blue-light': '#DDF4FF',
+          yellow: '#FFC800',
+          'yellow-dark': '#E5A500',
+          'yellow-light': '#FFF8D9',
+          orange: '#FF9600',
+          'orange-dark': '#E58500',
+          'orange-light': '#FFF0D4',
+          red: '#FF4B4B',
+          'red-dark': '#EA2B2B',
+          'red-light': '#FFEAEA',
+          purple: '#CE82FF',
+          'purple-dark': '#A559D9',
+          'purple-light': '#F6E8FF',
+          gray: {
+            50: '#FBFBFB',
+            100: '#F7F7F7',
+            200: '#E5E5E5',
+            300: '#D4D4D8',
+            400: '#A1A1AA',
+            500: '#71717A',
+            600: '#52525B',
+            700: '#3F3F46',
+            800: '#27272A',
+            900: '#18181B',
+            950: '#111827',
+          }
+        },
+        // Compatibilidade com classes editoriais
         editorial: {
           50: '#fdf8f4',
           100: '#f8ece2',
@@ -49,7 +84,6 @@ export default {
           900: '#243b2d',
           950: '#122018',
         },
-        // Manter brand retrocompatível mas com tom editorial canela/âmbar suave
         brand: {
           50: '#fffbeb',
           100: '#fef3c7',
@@ -65,7 +99,7 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+        sans: ['Nunito', 'Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
         reading: ['Newsreader', 'Lora', 'Charter', 'Georgia', 'Cambria', 'Times New Roman', 'serif'],
         mono: ['JetBrains Mono', 'ui-monospace', 'Menlo', 'monospace']
       },

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, ArrowRight, BookOpen, Loader2, CheckCircle2, Zap } from 'lucide-react';
+import { User, Mail, ArrowRight, BookOpen, Loader2, CheckCircle2 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { storage } from '../services/storageService';
 
@@ -16,7 +16,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onSave, onRestore 
   const [remoteFound, setRemoteFound] = useState<UserProfile | null>(null);
   const [error, setError] = useState('');
 
-  // Busca perfil existente remotamente (Supabase fr_profiles ou Cloud KV)
   const handleCheckEmail = async (targetEmail?: string) => {
     const cleanEmail = (targetEmail || email).toLowerCase().trim();
     if (!cleanEmail || !cleanEmail.includes('@') || cleanEmail.length < 5) return;
@@ -34,13 +33,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onSave, onRestore 
         setRemoteFound(null);
       }
     } catch {
-      // Falha silenciosa
+      // Silencioso
     } finally {
       setIsSearchingRemote(false);
     }
   };
 
-  // Verificação debounced para celulares (detecta perfil antes mesmo de sair do campo)
   useEffect(() => {
     const cleanEmail = email.toLowerCase().trim();
     if (cleanEmail.includes('@') && cleanEmail.includes('.') && cleanEmail.length >= 6) {
@@ -59,153 +57,116 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onSave, onRestore 
     e.preventDefault();
     setError('');
 
-    const cleanEmail = email.toLowerCase().trim();
-    if (!cleanEmail || !cleanEmail.includes('@')) {
+    if (!name.trim()) {
+      setError('Por favor, informe seu nome.');
+      return;
+    }
+    if (!email.trim() || !email.includes('@')) {
       setError('Por favor, informe um e-mail válido.');
       return;
     }
 
-    // Se já encontramos o perfil remoto na nuvem, restaura diretamente
     if (remoteFound) {
       onRestore(remoteFound);
       return;
     }
 
-    // Se ainda não buscou remotamente, tenta buscar antes de forçar novo cadastro
-    setIsSearchingRemote(true);
     try {
-      const remote = await storage.fetchRemoteProfile(cleanEmail);
+      setIsSearchingRemote(true);
+      const remote = await storage.fetchRemoteProfile(email.toLowerCase().trim());
       if (remote.profile) {
-        setRemoteFound(remote.profile);
         onRestore(remote.profile);
         return;
       }
     } catch {
-      // Ignora erro
+      // Cria novo
     } finally {
       setIsSearchingRemote(false);
     }
 
-    // Se for novo perfil e nome não foi informado
-    if (!name.trim()) {
-      setError('Novo por aqui? Informe seu nome abaixo para iniciar o teste diagnóstico de velocidade.');
-      return;
-    }
-
-    onSave(name.trim(), cleanEmail);
+    onSave(name.trim(), email.toLowerCase().trim());
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white border-2 border-stone-200 rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl relative overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-stone-800">
-        
-        {/* Cabeçalho no Estilo Duolingo: Ícone Vibrante, Tipografia Forte */}
-        <div className="text-center mb-6">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-600 flex items-center justify-center text-white mx-auto mb-3.5 shadow-lg shadow-emerald-600/30 border-b-4 border-emerald-800">
-            <BookOpen className="w-8 h-8" />
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white border-2 border-stone-200 rounded-3xl max-w-sm w-full p-6 sm:p-8 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 text-[#131F24]">
+        {/* Header com Logo */}
+        <div className="text-center space-y-2">
+          <div className="w-16 h-16 rounded-3xl bg-[#58CC02] border-b-4 border-[#46A302] flex items-center justify-center text-white mx-auto shadow-sm">
+            <BookOpen className="w-8 h-8 stroke-[2.5]" />
           </div>
-          <h2 className="text-2xl font-black text-stone-900 tracking-tight">LEITOX</h2>
-          <p className="text-sm text-stone-600 font-medium mt-1">
-            Treinamento de Leitura Dinâmica & Retenção Cognitiva
+          <h2 className="text-2xl font-black text-[#131F24]">Bem-vindo ao Leitox</h2>
+          <p className="text-sm font-bold text-stone-500">
+            Treine sua leitura diária e aumente sua velocidade em até +50%.
           </p>
         </div>
 
-        {error && (
-          <div className="p-3.5 rounded-2xl bg-rose-50 border-2 border-rose-200 text-rose-800 text-xs sm:text-sm font-medium text-center mb-4 leading-relaxed">
-            {error}
-          </div>
-        )}
-
-        {/* Formulário 100% Amarrado ao E-mail (Sem código de sincronização) */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
+          {/* E-mail */}
           <div>
-            <label className="text-xs uppercase tracking-wider text-stone-600 font-bold block mb-1.5">
+            <label className="text-xs font-black uppercase text-stone-400 block mb-1">
               Seu E-mail
             </label>
             <div className="relative">
-              <Mail className="w-5 h-5 text-stone-400 absolute left-4 top-1/2 -translate-y-1/2" />
+              <Mail className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
               <input
                 type="email"
                 required
-                autoFocus
-                placeholder="seuemail@exemplo.com"
+                autoComplete="email"
+                placeholder="exemplo@gmail.com"
                 value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (remoteFound) setRemoteFound(null);
-                }}
-                onBlur={() => handleCheckEmail()}
-                className="w-full bg-stone-50 border-2 border-stone-200 rounded-2xl py-3.5 pl-12 pr-11 text-base text-stone-900 placeholder:text-stone-400 font-medium focus:bg-white focus:outline-none focus:border-emerald-600 transition-colors"
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full pl-11 pr-10 py-3.5 rounded-2xl border-2 border-stone-200 focus:border-[#58CC02] outline-none text-base font-bold transition-colors"
               />
               {isSearchingRemote && (
-                <Loader2 className="w-5 h-5 text-emerald-600 animate-spin absolute right-3.5 top-1/2 -translate-y-1/2" />
+                <Loader2 className="w-5 h-5 absolute right-3.5 top-1/2 -translate-y-1/2 text-[#1899D6] animate-spin" />
               )}
             </div>
           </div>
 
-          {/* Perfil existente reconhecido no banco do projeta / Supabase */}
-          {remoteFound ? (
-            <div className="p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-left space-y-3 animate-in fade-in duration-150">
-              <div className="flex items-center gap-2 text-emerald-900 text-sm font-bold">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                <span>Perfil Localizado na Nuvem!</span>
-              </div>
-              <p className="text-sm text-emerald-900 leading-relaxed">
-                Bem-vindo(a) de volta, <strong className="text-emerald-950">{remoteFound.name}</strong>! Sua meta de <strong>{remoteFound.targetWpm} PPM</strong> e seus {remoteFound.testsCompleted} treinos estão preservados.
-              </p>
-              <button
-                type="button"
-                onClick={() => onRestore(remoteFound)}
-                className="w-full py-4 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-black text-sm sm:text-base flex items-center justify-center gap-2 shadow-md border-b-4 border-emerald-800 transition-all cursor-pointer"
-              >
-                <span>Continuar Meu Treinamento</span>
-                <ArrowRight className="w-5 h-5" />
-              </button>
-            </div>
-          ) : (
-            <div>
-              <label className="text-xs uppercase tracking-wider text-stone-600 font-bold block mb-1.5">
-                Seu Nome Completo
-              </label>
-              <div className="relative">
-                <User className="w-5 h-5 text-stone-400 absolute left-4 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="Como gostaria de ser chamado?"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-stone-50 border-2 border-stone-200 rounded-2xl py-3.5 pl-12 pr-4 text-base text-stone-900 placeholder:text-stone-400 font-medium focus:bg-white focus:outline-none focus:border-emerald-600 transition-colors"
-                />
+          {/* Banner de Perfil Existente Encontrado */}
+          {remoteFound && (
+            <div className="p-3.5 rounded-2xl bg-[#D7FFB8] border-2 border-[#A8EE69] text-xs font-bold text-[#46A302] flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 shrink-0 stroke-[2.5]" />
+              <div>
+                <span>Perfil recuperado! </span>
+                <span className="font-mono font-black">{remoteFound.currentWpm} PPM</span> • {remoteFound.streakDays} dias de sequência
               </div>
             </div>
           )}
 
-          {!remoteFound && (
-            <div className="pt-2">
-              <button
-                type="submit"
-                disabled={isSearchingRemote}
-                className="w-full py-4 px-5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-black text-sm sm:text-base flex items-center justify-center gap-2 shadow-md border-b-4 border-emerald-800 transition-all disabled:opacity-50 cursor-pointer"
-              >
-                {isSearchingRemote ? (
-                  <span>Localizando perfil...</span>
-                ) : (
-                  <>
-                    <Zap className="w-5 h-5 fill-current" />
-                    <span>Iniciar Treinamento (+50%)</span>
-                    <ArrowRight className="w-5 h-5" />
-                  </>
-                )}
-              </button>
+          {/* Nome */}
+          <div>
+            <label className="text-xs font-black uppercase text-stone-400 block mb-1">
+              Como quer ser chamado?
+            </label>
+            <div className="relative">
+              <User className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+              <input
+                type="text"
+                required
+                autoComplete="name"
+                placeholder="Seu nome ou apelido"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full pl-11 pr-4 py-3.5 rounded-2xl border-2 border-stone-200 focus:border-[#58CC02] outline-none text-base font-bold transition-colors"
+              />
             </div>
-          )}
-
-          {/* Dica amigável estilo Duolingo */}
-          <div className="pt-2 text-center">
-            <p className="text-xs text-stone-500 leading-relaxed">
-              Tudo sincronizado automaticamente pelo seu e-mail. Acesse de qualquer celular ou computador sem códigos manuais.
-            </p>
           </div>
+
+          {error && (
+            <p className="text-xs font-black text-[#FF4B4B] bg-[#FFEAEA] p-2.5 rounded-xl border border-[#FFC2C2] text-center">
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            className="w-full py-4 px-6 btn-duo-green text-base font-black flex items-center justify-center gap-2 cursor-pointer shadow-md mt-2"
+          >
+            <span>{remoteFound ? 'Entrar com meu Perfil' : 'Começar Agora'}</span>
+            <ArrowRight className="w-5 h-5 stroke-[2.5]" />
+          </button>
         </form>
       </div>
     </div>

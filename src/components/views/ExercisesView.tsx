@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, Zap, Trophy, Layers, MoveHorizontal, Award, ArrowRight } from 'lucide-react';
+import { Eye, Zap, Trophy, Layers, MoveHorizontal, Award, ChevronRight } from 'lucide-react';
 import { ExerciseType } from '../../types';
 
 interface ExercisesViewProps {
@@ -10,74 +10,55 @@ export const ExercisesView: React.FC<ExercisesViewProps> = ({ onSelectExercise }
   const exercises = [
     {
       type: 'schulte' as ExerciseType,
-      title: 'Tabelas de Schulte (3x3 a 5x5)',
-      category: 'Visão Periférica',
-      description: 'Expande o raio do campo parafoveal mantendo o olhar ancorado no centro.',
+      title: 'Tabela de Schulte',
       icon: Eye,
-      color: 'bg-amber-50 text-amber-700 border-amber-300',
-      tag: 'Aceleração Visual',
-      duration: '2-3 min'
+      colorClass: 'bg-[#FFF8D9] text-[#B8860B] border-[#FFE680]',
+      duration: '3 min'
     },
     {
       type: 'metronome' as ExerciseType,
-      title: 'Metrônomo Rítmico Anti-Subvocalização',
-      category: 'Supressão Sonora',
-      description: 'Derruba o vício de pronunciar cada palavra na mente através de cadência rítmica acelerada.',
+      title: 'Metrônomo Rítmico',
       icon: Zap,
-      color: 'bg-emerald-50 text-emerald-700 border-emerald-300',
-      tag: 'Eliminar Subvocalização',
-      duration: '3-5 min'
+      colorClass: 'bg-[#D7FFB8] text-[#46A302] border-[#A8EE69]',
+      duration: '5 min'
     },
     {
       type: 'rsvp' as ExerciseType,
-      title: 'Leitor RSVP com Ponto Focal (ORP)',
-      category: 'Aceleração Turbo',
-      description: 'Apresentação serial rápida que alinha a letra focal da palavra, atingindo até 800 PPM sem esforço.',
+      title: 'Leitor RSVP Turbo',
       icon: Trophy,
-      color: 'bg-blue-50 text-blue-700 border-blue-300',
-      tag: 'Sem Saltos Oculares',
-      duration: '3-5 min'
+      colorClass: 'bg-[#DDF4FF] text-[#1899D6] border-[#B0E4FF]',
+      duration: '5 min'
     },
     {
       type: 'chunking' as ExerciseType,
-      title: 'Leitura em Blocos (Chunking)',
-      category: 'Sintagmas',
-      description: 'Treina o cérebro para agrupar 2 a 4 palavras por fixação em colunas estreitas.',
+      title: 'Leitura em Blocos',
       icon: Layers,
-      color: 'bg-teal-50 text-teal-700 border-teal-300',
-      tag: 'Fixação Ampla',
-      duration: '3-4 min'
+      colorClass: 'bg-[#F6E8FF] text-[#A559D9] border-[#E4B8FF]',
+      duration: '4 min'
     },
     {
       type: 'saccadic' as ExerciseType,
-      title: 'Saltos Sacádicos Bilaterais',
-      category: 'Agilidade Ocular',
-      description: 'Exercícios dinâmicos para soltar os músculos que controlam a movimentação dos olhos.',
+      title: 'Saltos Sacádicos',
       icon: MoveHorizontal,
-      color: 'bg-indigo-50 text-indigo-700 border-indigo-300',
-      tag: 'Alongamento Visual',
+      colorClass: 'bg-[#FFF0D4] text-[#E58500] border-[#FFD9A6]',
       duration: '2 min'
     },
     {
       type: 'assessment' as ExerciseType,
-      title: 'Teste com Cronômetro & Quiz',
-      category: 'Aferição Real',
-      description: 'Mede suas Palavras Por Minuto (PPM) e valida a retenção através de questionário com textos variados.',
+      title: 'Teste de Velocidade',
       icon: Award,
-      color: 'bg-purple-50 text-purple-700 border-purple-300',
-      tag: 'Medição de Progresso',
-      duration: '2-3 min'
+      colorClass: 'bg-[#FFEAEA] text-[#EA2B2B] border-[#FFC2C2]',
+      duration: '3 min'
     }
   ];
 
   return (
-    <div className="space-y-4 p-4 pb-24 max-w-lg mx-auto text-stone-800">
+    <div className="space-y-4 p-4 pb-32 max-w-lg mx-auto text-[#131F24]">
       <div>
-        <h2 className="text-xl font-black text-stone-900 tracking-tight">Catálogo de Exercícios</h2>
-        <p className="text-xs sm:text-sm text-stone-600 font-medium mt-0.5">Escolha uma modalidade para praticar individualmente</p>
+        <h2 className="text-3xl font-black text-[#131F24] tracking-tight">Treino Livre</h2>
       </div>
 
-      <div className="space-y-3.5">
+      <div className="space-y-3">
         {exercises.map((item) => {
           const Icon = item.icon;
 
@@ -85,35 +66,25 @@ export const ExercisesView: React.FC<ExercisesViewProps> = ({ onSelectExercise }
             <button
               key={item.type}
               onClick={() => onSelectExercise(item.type)}
-              className="w-full text-left bg-white border-2 border-stone-200 hover:border-emerald-500 p-4 sm:p-5 rounded-3xl transition-all shadow-xs group relative overflow-hidden active:scale-98 cursor-pointer"
+              className="w-full text-left p-5 rounded-3xl bg-white border-2 border-stone-200 border-b-4 border-b-stone-300 hover:border-[#1CB0F6] transition-all cursor-pointer active:border-b-2 active:translate-y-[2px] flex items-center justify-between gap-3 group"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3.5">
-                  <div className={`w-12 h-12 rounded-2xl ${item.color} border-2 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform`}>
-                    <Icon className="w-6 h-6" />
-                  </div>
-
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
-                        {item.category}
-                      </span>
-                      <span className="text-xs bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-mono font-semibold border border-stone-200">
-                        {item.duration}
-                      </span>
-                    </div>
-                    <h3 className="text-base font-bold text-stone-900 group-hover:text-emerald-700 transition-colors">
-                      {item.title}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-stone-600 mt-1 leading-relaxed font-medium">
-                      {item.description}
-                    </p>
-                  </div>
+              <div className="flex items-center gap-4 min-w-0">
+                <div className={`w-15 h-15 rounded-2xl border-2 flex items-center justify-center shrink-0 ${item.colorClass}`}>
+                  <Icon className="w-8 h-8 stroke-[2.5]" />
                 </div>
 
-                <div className="w-9 h-9 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-500 group-hover:bg-emerald-600 group-hover:text-white transition-all shrink-0 mt-1">
-                  <ArrowRight className="w-4 h-4" />
+                <div className="min-w-0">
+                  <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-stone-400 block mb-1">
+                    {item.duration}
+                  </span>
+                  <h3 className="text-lg sm:text-xl font-black text-[#131F24] truncate">
+                    {item.title}
+                  </h3>
                 </div>
+              </div>
+
+              <div className="w-11 h-11 rounded-2xl bg-stone-100 flex items-center justify-center text-stone-400 group-hover:text-[#1CB0F6] group-hover:bg-[#DDF4FF] shrink-0 transition-colors">
+                <ChevronRight className="w-6 h-6 stroke-[2.5]" />
               </div>
             </button>
           );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { CalendarCheck2, CheckCircle2, Play, Eye, Zap, Layers, Trophy, Flame, Award } from 'lucide-react';
+import { CheckCircle2, Play, Eye, Zap, Layers, Trophy, Flame, Award, ChevronRight } from 'lucide-react';
 import { DailyProgress, ExerciseType } from '../../types';
 
 interface DailyJourneyViewProps {
@@ -12,63 +12,57 @@ interface StepConfig {
   id: number;
   type: ExerciseType;
   title: string;
-  subtitle: string;
   durationMinutes: number;
   icon: React.ElementType;
-  tagColor: string;
-  scientificGoal: string;
+  colorClass: string;
+  buttonClass: string;
 }
 
 const STEPS: StepConfig[] = [
   {
     id: 1,
     type: 'schulte',
-    title: 'Aquecimento Visual & Percepção Parafoveal',
-    subtitle: 'Tabela de Schulte 5x5',
+    title: 'Aquecimento Visual',
     durationMinutes: 3,
     icon: Eye,
-    tagColor: 'text-amber-700 bg-amber-50 border-amber-200',
-    scientificGoal: 'Expande o raio da visão periférica e destrava o campo parafoveal'
+    colorClass: 'bg-[#FFF8D9] text-[#B8860B] border-[#FFE680]',
+    buttonClass: 'btn-duo-yellow'
   },
   {
     id: 2,
     type: 'metronome',
-    title: 'Supressão da Subvocalização & Ritmo',
-    subtitle: 'Metrônomo Rítmico com Clássicos PT-BR',
+    title: 'Ritmo & Concentração',
     durationMinutes: 5,
     icon: Zap,
-    tagColor: 'text-emerald-700 bg-emerald-50 border-emerald-200',
-    scientificGoal: 'Inibe a voz interior forçando cadência superior à velocidade da fala'
+    colorClass: 'bg-[#D7FFB8] text-[#46A302] border-[#A8EE69]',
+    buttonClass: 'btn-duo-green'
   },
   {
     id: 3,
     type: 'rsvp',
-    title: 'Aceleração Visual com Ponto Focal (ORP)',
-    subtitle: 'Leitor RSVP Turbo (350+ PPM)',
+    title: 'Velocidade Turbo',
     durationMinutes: 5,
     icon: Trophy,
-    tagColor: 'text-blue-700 bg-blue-50 border-blue-200',
-    scientificGoal: 'Elimina regressões e saltos sacádicos desnecessários'
+    colorClass: 'bg-[#DDF4FF] text-[#1899D6] border-[#B0E4FF]',
+    buttonClass: 'btn-duo-blue'
   },
   {
     id: 4,
     type: 'chunking',
-    title: 'Leitura em Blocos e Sintagmas',
-    subtitle: 'Agrupamento de 3 palavras por fixação',
+    title: 'Leitura em Blocos',
     durationMinutes: 4,
     icon: Layers,
-    tagColor: 'text-teal-700 bg-teal-50 border-teal-200',
-    scientificGoal: 'Ensina o cérebro a absorver conceitos completos em vez de sílabas isoladas'
+    colorClass: 'bg-[#F6E8FF] text-[#A559D9] border-[#E4B8FF]',
+    buttonClass: 'btn-duo-purple'
   },
   {
     id: 5,
     type: 'assessment',
-    title: 'Teste de Aferição & Retenção do Dia',
-    subtitle: 'Cronômetro + Quiz de Fixação (Texto Inédito)',
+    title: 'Desafio do Dia (Quiz)',
     durationMinutes: 3,
     icon: Award,
-    tagColor: 'text-purple-700 bg-purple-50 border-purple-200',
-    scientificGoal: 'Mede a velocidade real (PPM) e a taxa de compreensão do treino'
+    colorClass: 'bg-[#FFEAEA] text-[#EA2B2B] border-[#FFC2C2]',
+    buttonClass: 'btn-duo-red'
   }
 ];
 
@@ -78,49 +72,39 @@ export const DailyJourneyView: React.FC<DailyJourneyViewProps> = ({
   onStartStep
 }) => {
   const completedCount = dailyProgress.completedSteps.length;
+  const progressPercent = Math.round((completedCount / STEPS.length) * 100);
 
   return (
-    <div className="space-y-4 p-4 pb-24 max-w-lg mx-auto text-stone-800">
-      {/* Header da Jornada */}
-      <div className="bg-white p-5 sm:p-6 rounded-3xl border-2 border-stone-200 shadow-xs">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 border-2 border-emerald-200 flex items-center justify-center">
-              <CalendarCheck2 className="w-5 h-5" />
-            </div>
-            <span className="text-xs uppercase tracking-wider font-black text-emerald-800">
-              Protocolo Neurocientífico
-            </span>
+    <div className="space-y-4 p-4 pb-28 max-w-lg mx-auto text-[#131F24]">
+      {/* Top Banner da Jornada */}
+      <div className="card-duo p-5 sm:p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-black text-[#131F24]">Treino de Hoje</h2>
+            <p className="text-sm font-bold text-stone-500 mt-0.5">
+              {dailyProgress.allDone ? 'Meta diária concluída! 🎉' : `${completedCount} de ${STEPS.length} etapas concluídas`}
+            </p>
           </div>
 
-          <div className="flex items-center gap-1.5 text-amber-800 font-mono text-xs font-black bg-amber-50 border-2 border-amber-200 px-3 py-1.5 rounded-xl">
-            <Flame className="w-4 h-4 fill-amber-500 text-amber-500" />
-            <span>{streakDays} dias seguidos</span>
+          <div className="flex items-center gap-1.5 bg-[#FFF8D9] border-2 border-[#FFE680] border-b-4 border-b-[#E5A500] px-4 py-2 rounded-2xl text-[#B8860B] font-black text-base">
+            <Flame className="w-5 h-5 fill-[#FF9600] text-[#FF9600]" />
+            <span>{streakDays} dias</span>
           </div>
         </div>
 
-        <h2 className="text-xl font-black text-stone-900 tracking-tight">Jornada Diária de 20 Minutos</h2>
-        <p className="text-xs sm:text-sm text-stone-600 leading-relaxed mt-1 font-medium">
-          Complete a sequência recomendada para reprogramar o córtex visual e atingir sua meta de <strong className="text-emerald-700 font-bold">+50% de velocidade</strong> com máxima retenção.
-        </p>
-
-        {/* Barra de Progresso da Jornada */}
-        <div className="mt-4 pt-4 border-t-2 border-stone-100">
-          <div className="flex justify-between text-xs sm:text-sm mb-2 font-bold">
-            <span className="text-stone-600">Progresso de Hoje:</span>
-            <span className="text-emerald-700 font-mono font-black">{completedCount} de 5 concluídos ({dailyProgress.totalMinutes} min)</span>
-          </div>
-          <div className="w-full bg-stone-100 h-3 rounded-full overflow-hidden border border-stone-200">
+        {/* Barra de Progresso Duolingo */}
+        <div className="space-y-1.5">
+          <div className="w-full bg-stone-100 h-4 rounded-full overflow-hidden border-2 border-stone-200">
             <div
-              className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full transition-all duration-300"
-              style={{ width: `${(completedCount / 5) * 100}%` }}
+              className="bg-[#58CC02] h-full rounded-full transition-all duration-500"
+              style={{ width: `${progressPercent}%` }}
             />
           </div>
         </div>
       </div>
 
-      {/* Lista de Etapas Guiadas com Escala Duolingo */}
-      <div className="space-y-3.5">
+      {/* Lista de Passos - Limpa, Fluida e Estilo Duolingo */}
+      <div className="space-y-3">
         {STEPS.map((step) => {
           const isDone = dailyProgress.completedSteps.includes(step.id);
           const Icon = step.icon;
@@ -128,62 +112,72 @@ export const DailyJourneyView: React.FC<DailyJourneyViewProps> = ({
           return (
             <div
               key={step.id}
-              className={`p-4 sm:p-5 rounded-3xl border-2 transition-all ${
+              className={`p-4 sm:p-5 rounded-3xl border-2 transition-all flex items-center justify-between gap-3 ${
                 isDone
-                  ? 'bg-stone-50/90 border-stone-200'
-                  : 'bg-white border-stone-200 shadow-xs hover:border-emerald-400'
+                  ? 'bg-white border-[#A8EE69] border-b-4 border-b-[#58CC02]'
+                  : 'bg-white border-stone-200 border-b-4 border-b-stone-300 hover:border-[#1CB0F6]'
               }`}
             >
-              <div className="flex items-start justify-between gap-3 mb-2.5">
-                <div className="flex items-start gap-3.5">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border-2 ${
+              <div className="flex items-center gap-3.5 min-w-0">
+                {/* Ícone Redondo ou Check */}
+                <div
+                  className={`w-14 h-14 rounded-2xl border-2 flex items-center justify-center shrink-0 ${
                     isDone
-                      ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
-                      : step.tagColor
-                  }`}>
-                    {isDone ? <CheckCircle2 className="w-6 h-6" /> : <Icon className="w-6 h-6" />}
-                  </div>
-
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-mono text-stone-500 font-bold uppercase">
-                        Passo {step.id} • {step.durationMinutes} min
-                      </span>
-                      {isDone && (
-                        <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-300">
-                          Concluído
-                        </span>
-                      )}
-                    </div>
-                    <h3 className={`text-sm sm:text-base font-bold ${isDone ? 'text-stone-400 line-through' : 'text-stone-900'}`}>
-                      {step.title}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-stone-500 font-medium mt-0.5">{step.subtitle}</p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => onStartStep(step.id, step.type)}
-                  className={`py-2.5 px-4 rounded-2xl font-bold text-xs sm:text-sm flex items-center gap-1.5 transition-all shrink-0 cursor-pointer active:scale-98 border-b-2 ${
-                    isDone
-                      ? 'bg-stone-100 text-stone-700 hover:text-stone-900 hover:bg-stone-200 border-stone-300'
-                      : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-800 shadow-xs'
+                      ? 'bg-[#D7FFB8] text-[#46A302] border-[#A8EE69]'
+                      : step.colorClass
                   }`}
                 >
-                  <Play className="w-4 h-4 fill-current" />
-                  <span>{isDone ? 'Repetir' : 'Iniciar'}</span>
-                </button>
+                  {isDone ? (
+                    <CheckCircle2 className="w-8 h-8 stroke-[2.5]" />
+                  ) : (
+                    <Icon className="w-7 h-7 stroke-[2.5]" />
+                  )}
+                </div>
+
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-stone-400">
+                      Passo {step.id} • {step.durationMinutes} min
+                    </span>
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-black text-[#131F24] truncate">
+                    {step.title}
+                  </h3>
+                </div>
               </div>
 
-              {/* Justificativa Científica */}
-              <div className="bg-stone-50 py-2 px-3 rounded-xl text-xs text-stone-600 border border-stone-200 flex items-center gap-2 font-medium">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                <span>{step.scientificGoal}</span>
-              </div>
+              {/* Botão de Ação */}
+              <button
+                onClick={() => onStartStep(step.id, step.type)}
+                className={`py-3.5 px-5 text-base font-black shrink-0 flex items-center gap-1.5 cursor-pointer ${
+                  isDone
+                    ? 'btn-duo-white'
+                    : step.buttonClass
+                }`}
+              >
+                {isDone ? (
+                  <span>Refazer</span>
+                ) : (
+                  <>
+                    <span>Começar</span>
+                    <Play className="w-4 h-4 fill-current ml-0.5" />
+                  </>
+                )}
+              </button>
             </div>
           );
         })}
       </div>
+
+      {dailyProgress.allDone && (
+        <div className="card-duo p-6 text-center space-y-2 bg-[#D7FFB8] border-[#A8EE69] border-b-4 border-b-[#46A302]">
+          <span className="text-3xl block">🏆</span>
+          <h3 className="text-xl font-black text-[#46A302]">Treino Concluído com Sucesso!</h3>
+          <p className="text-sm font-bold text-stone-600">
+            Você completou todas as etapas de hoje. Volte amanhã para manter sua sequência de leitura!
+          </p>
+        </div>
+      )}
     </div>
   );
 };

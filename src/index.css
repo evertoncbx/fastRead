@@ -5,30 +5,184 @@
 @layer base {
   html {
     -webkit-tap-highlight-color: transparent;
-    background-color: #F8FAF9;
-    color: #1E293B;
+    background-color: #F7F7F7;
+    color: #131F24;
+    font-size: 18px;
   }
   
   body {
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    background-color: #F8FAF9;
-    color: #1E293B;
+    background-color: #F7F7F7;
+    color: #131F24;
+    font-family: 'Nunito', 'Inter', system-ui, sans-serif;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
+    font-size: 1.125rem;
+    line-height: 1.6;
   }
 }
 
-/* Tipografia de Leitura Focada (Editorial Comfort) */
+/* Tipografia de Leitura Ampla, Confortável e Altamente Legível */
 .font-reading {
-  font-family: 'Newsreader', 'Lora', 'Charter', 'Georgia', 'Cambria', serif;
-  line-height: 1.85;
-  letter-spacing: 0.012em;
+  font-family: 'Lora', 'Newsreader', 'Georgia', serif;
+  line-height: 2;
+  letter-spacing: 0.015em;
+  font-size: 1.45rem;
+}
+
+@media (min-width: 640px) {
+  .font-reading {
+    font-size: 1.65rem;
+    line-height: 2.1;
+  }
+}
+
+/* Botões 3D Táteis Estilo Duolingo */
+.btn-duo-green {
+  background-color: #58CC02;
+  border-bottom: 4px solid #46A302;
+  color: #FFFFFF;
+  font-weight: 900;
+  border-radius: 1rem;
+  transition: all 0.1s ease;
+  user-select: none;
+}
+.btn-duo-green:hover:not(:disabled) {
+  background-color: #61E002;
+}
+.btn-duo-green:active:not(:disabled) {
+  border-bottom-width: 0px;
+  transform: translateY(4px);
+}
+
+.btn-duo-blue {
+  background-color: #1CB0F6;
+  border-bottom: 4px solid #1899D6;
+  color: #FFFFFF;
+  font-weight: 900;
+  border-radius: 1rem;
+  transition: all 0.1s ease;
+  user-select: none;
+}
+.btn-duo-blue:hover:not(:disabled) {
+  background-color: #24BEFF;
+}
+.btn-duo-blue:active:not(:disabled) {
+  border-bottom-width: 0px;
+  transform: translateY(4px);
+}
+
+.btn-duo-yellow {
+  background-color: #FFC800;
+  border-bottom: 4px solid #E5A500;
+  color: #FFFFFF;
+  font-weight: 900;
+  border-radius: 1rem;
+  transition: all 0.1s ease;
+  user-select: none;
+}
+.btn-duo-yellow:hover:not(:disabled) {
+  background-color: #FFD220;
+}
+.btn-duo-yellow:active:not(:disabled) {
+  border-bottom-width: 0px;
+  transform: translateY(4px);
+}
+
+.btn-duo-red {
+  background-color: #FF4B4B;
+  border-bottom: 4px solid #EA2B2B;
+  color: #FFFFFF;
+  font-weight: 900;
+  border-radius: 1rem;
+  transition: all 0.1s ease;
+  user-select: none;
+}
+.btn-duo-red:hover:not(:disabled) {
+  background-color: #FF5E5E;
+}
+.btn-duo-red:active:not(:disabled) {
+  border-bottom-width: 0px;
+  transform: translateY(4px);
+}
+
+.btn-duo-purple {
+  background-color: #CE82FF;
+  border-bottom: 4px solid #A559D9;
+  color: #FFFFFF;
+  font-weight: 900;
+  border-radius: 1rem;
+  transition: all 0.1s ease;
+  user-select: none;
+}
+.btn-duo-purple:hover:not(:disabled) {
+  background-color: #D697FF;
+}
+.btn-duo-purple:active:not(:disabled) {
+  border-bottom-width: 0px;
+  transform: translateY(4px);
+}
+
+.btn-duo-white {
+  background-color: #FFFFFF;
+  border: 2px solid #E5E5E5;
+  border-bottom: 4px solid #D4D4D8;
+  color: #3C3C3C;
+  font-weight: 900;
+  border-radius: 1rem;
+  transition: all 0.1s ease;
+  user-select: none;
+}
+.btn-duo-white:hover:not(:disabled) {
+  background-color: #F7F7F7;
+  border-color: #D4D4D8;
+  border-bottom-color: #A1A1AA;
+}
+.btn-duo-white:active:not(:disabled) {
+  border-bottom-width: 2px;
+  transform: translateY(2px);
+}
+
+/* Cards Estilo Duolingo */
+.card-duo {
+  background-color: #FFFFFF;
+  border: 2px solid #E5E5E5;
+  border-bottom: 4px solid #E5E5E5;
+  border-radius: 1.5rem;
+}
+
+.card-duo-green {
+  background-color: #FFFFFF;
+  border: 2px solid #D7FFB8;
+  border-bottom: 4px solid #58CC02;
+  border-radius: 1.5rem;
+}
+
+/* Badges Duolingo */
+.badge-duo-green {
+  background-color: #D7FFB8;
+  color: #46A302;
+  border: 2px solid #A8EE69;
+  font-weight: 900;
+}
+
+.badge-duo-blue {
+  background-color: #DDF4FF;
+  color: #1899D6;
+  border: 2px solid #B0E4FF;
+  font-weight: 900;
+}
+
+.badge-duo-yellow {
+  background-color: #FFF6CC;
+  color: #B58100;
+  border: 2px solid #FFE066;
+  font-weight: 900;
 }
 
 /* Custom scrollbar para ambiente de leitura diurno */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -36,10 +190,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.35);
+  background: #E5E5E5;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.6);
+  background: #D4D4D8;
 }

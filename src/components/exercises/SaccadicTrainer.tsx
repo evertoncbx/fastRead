@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, ArrowLeft, MoveHorizontal, Zap, CheckCircle2 } from 'lucide-react';
+import { Play, Pause, RotateCcw, ArrowLeft, MoveHorizontal, CheckCircle2 } from 'lucide-react';
 import { audio } from '../../services/audioService';
+import { CountdownOverlay } from './CountdownOverlay';
 import confetti from 'canvas-confetti';
 
 interface SaccadicTrainerProps {
@@ -18,6 +19,7 @@ const SAMPLE_WORDS = [
 export const SaccadicTrainer: React.FC<SaccadicTrainerProps> = ({ onComplete, onBack, isDailyStep }) => {
   const [speedMs, setSpeedMs] = useState<number>(500);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [showCountdown, setShowCountdown] = useState<boolean>(false);
   const [activeSide, setActiveSide] = useState<'left' | 'right'>('left');
   const [wordIndex, setWordIndex] = useState<number>(0);
   const [jumpsCount, setJumpsCount] = useState<number>(0);
@@ -33,6 +35,11 @@ export const SaccadicTrainer: React.FC<SaccadicTrainerProps> = ({ onComplete, on
   }, []);
 
   const handleStart = () => {
+    setShowCountdown(true);
+  };
+
+  const startActualJumps = () => {
+    setShowCountdown(false);
     setIsPlaying(true);
     setIsFinished(false);
 
@@ -58,26 +65,34 @@ export const SaccadicTrainer: React.FC<SaccadicTrainerProps> = ({ onComplete, on
     }, speedMs);
   };
 
-  const handleStop = () => {
-    setIsPlaying(false);
+  const handlePause = () => {
     if (timerRef.current) clearInterval(timerRef.current);
+    setIsPlaying(false);
   };
 
   const handleReset = () => {
-    handleStop();
+    if (timerRef.current) clearInterval(timerRef.current);
+    setIsPlaying(false);
     setJumpsCount(0);
     setIsFinished(false);
     setActiveSide('left');
   };
 
   return (
-    <div className="flex flex-col min-h-full max-w-lg mx-auto p-4 pb-24 text-stone-800">
+    <div className="flex flex-col min-h-full max-w-lg mx-auto p-4 pb-28 text-[#131F24]">
+      {/* Contador Regressivo de 3 Segundos */}
+      <CountdownOverlay
+        isActive={showCountdown}
+        onComplete={startActualJumps}
+        title="Saltos Sacádicos"
+      />
+
       {/* Top bar */}
       <div className="flex items-center justify-between mb-4">
         {onBack ? (
           <button
             onClick={onBack}
-            className="flex items-center gap-1.5 text-sm text-stone-600 hover:text-stone-900 transition-colors py-1 px-2.5 rounded-lg bg-white border border-stone-200 shadow-2xs"
+            className="btn-duo-white py-2 px-3 text-sm flex items-center gap-1.5 cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Voltar</span>
@@ -86,155 +101,123 @@ export const SaccadicTrainer: React.FC<SaccadicTrainerProps> = ({ onComplete, on
       </div>
 
       {/* Header Info */}
-      <div className="bg-white p-4 rounded-2xl border border-stone-200 mb-4 shadow-xs">
-        <div className="flex items-center gap-2.5 mb-1.5">
-          <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-700">
-            <MoveHorizontal className="w-5 h-5" />
+      <div className="card-duo p-5 mb-4 space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-[#FFF0D4] border-2 border-[#FFD9A6] flex items-center justify-center text-[#E58500]">
+              <MoveHorizontal className="w-6 h-6 stroke-[2.5]" />
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-[#131F24]">
+                Saltos Sacádicos
+              </h2>
+            </div>
           </div>
-          <div>
-            <h2 className="text-lg font-bold text-stone-900 flex items-center gap-2">
-              Saltos Sacádicos Bilaterais
-              {isDailyStep && <span className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full font-medium">Jornada</span>}
-            </h2>
-            <p className="text-xs text-stone-500">Agilidade dos músculos motores oculares</p>
-          </div>
-        </div>
 
-        {/* Dica da técnica */}
-        <div className="mt-3 bg-indigo-50/80 p-2.5 rounded-xl border border-indigo-200 text-xs text-indigo-900 flex items-start gap-2">
-          <Zap className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
-          <span>
-            <strong className="text-indigo-950">Instrução:</strong> Mantenha a cabeça perfeitamente imóvel. Movimente exclusivamente os olhos, saltando de um lado para o outro no ritmo dos estímulos visuais.
+          <span className="text-xs font-black bg-[#FFF0D4] text-[#E58500] border-2 border-[#FFD9A6] px-3 py-1 rounded-full font-mono">
+            {jumpsCount} / {targetJumps}
           </span>
         </div>
       </div>
 
-      {/* Status Bar */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="bg-white border-2 border-stone-200 p-3.5 rounded-2xl shadow-xs">
-          <span className="text-xs uppercase tracking-wider text-stone-600 block font-bold mb-1">Saltos Concluídos</span>
-          <span className="text-2xl font-black text-indigo-700 font-mono">{jumpsCount} / {targetJumps}</span>
-        </div>
-
-        <div className="bg-white border-2 border-stone-200 p-3.5 rounded-2xl shadow-xs">
-          <span className="text-xs uppercase tracking-wider text-stone-600 block font-bold mb-1">Intervalo de Salto</span>
-          <span className="text-2xl font-black text-stone-900 font-mono">{speedMs}ms</span>
-        </div>
-      </div>
-
-      {/* Campo Visual de Saltos Sacádicos */}
-      <div className="relative bg-[#FCFBF8] border-2 border-stone-200 rounded-3xl p-6 mb-4 shadow-xs min-h-[220px] flex items-center justify-between overflow-hidden">
-        {/* Linha Central */}
-        <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[1px] bg-stone-300 border-dashed" />
-
+      {/* ÁREA DOS SALTOS BILATERAIS COM PALAVRAS GRANDES */}
+      <div className="card-duo p-8 min-h-[220px] bg-white flex items-center justify-between mb-4 relative select-none">
         {/* Lado Esquerdo */}
-        <div className="w-1/2 flex justify-start items-center pl-2">
-          {activeSide === 'left' && isPlaying && (
-            <div className="py-3 px-4 rounded-xl bg-indigo-600 text-white font-black text-lg tracking-wider animate-pulse shadow-xs">
+        <div className="w-1/2 flex items-center justify-center">
+          {activeSide === 'left' && isPlaying && !isFinished && (
+            <div className="text-2xl sm:text-4xl font-mono font-black text-[#1899D6] bg-[#DDF4FF] px-4 py-2 rounded-2xl border-2 border-[#B0E4FF] animate-in zoom-in-90 duration-100">
               {SAMPLE_WORDS[wordIndex]}
             </div>
           )}
         </div>
+
+        {/* Separador Central */}
+        <div className="w-0.5 h-24 bg-stone-200 rounded-full" />
 
         {/* Lado Direito */}
-        <div className="w-1/2 flex justify-end items-center pr-2">
-          {activeSide === 'right' && isPlaying && (
-            <div className="py-3 px-4 rounded-xl bg-emerald-600 text-white font-black text-lg tracking-wider animate-pulse shadow-xs">
+        <div className="w-1/2 flex items-center justify-center">
+          {activeSide === 'right' && isPlaying && !isFinished && (
+            <div className="text-2xl sm:text-4xl font-mono font-black text-[#58CC02] bg-[#D7FFB8] px-4 py-2 rounded-2xl border-2 border-[#A8EE69] animate-in zoom-in-90 duration-100">
               {SAMPLE_WORDS[wordIndex]}
             </div>
           )}
         </div>
 
-        {/* Overlay se parado */}
-        {!isPlaying && !isFinished && (
-          <div className="absolute inset-0 bg-white/90 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center z-10">
-            <MoveHorizontal className="w-10 h-10 text-indigo-600 mb-2" />
-            <h3 className="text-base font-bold text-stone-900 mb-1">Alongamento Sacádico</h3>
-            <p className="text-xs text-stone-500 max-w-xs mb-4">
-              Realize 60 saltos rápidos entre as extremidades para destravar a velocidade dos seus olhos.
-            </p>
-            <button
-              onClick={handleStart}
-              className="py-3 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition-all"
-            >
-              Iniciar Saltos
-            </button>
-          </div>
-        )}
-
-        {/* Overlay se concluído */}
         {isFinished && (
-          <div className="absolute inset-0 bg-white/95 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center z-10">
-            <CheckCircle2 className="w-12 h-12 text-emerald-600 mb-2" />
-            <h3 className="text-base font-bold text-stone-900 mb-1">Músculos Oculares Aquecidos!</h3>
-            <p className="text-xs text-stone-500 mb-3">{targetJumps} saltos completados com sucesso.</p>
-            {onComplete && (
-              <button
-                onClick={() => onComplete(400, 2)}
-                className="py-2.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 shadow-xs transition-all"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Continuar</span>
-              </button>
-            )}
+          <div className="absolute inset-0 bg-white/95 backdrop-blur-xs flex flex-col items-center justify-center space-y-2 rounded-3xl animate-in fade-in">
+            <CheckCircle2 className="w-12 h-12 text-[#58CC02] stroke-[2.5]" />
+            <h3 className="text-xl font-black text-[#131F24]">Treino Finalizado!</h3>
+            <p className="text-sm font-bold text-stone-400">{targetJumps} saltos completados</p>
           </div>
         )}
       </div>
 
-      {/* Controles de Intervalo */}
-      <div className="bg-white border-2 border-stone-200 p-4 rounded-2xl mb-4 shadow-xs">
-        <div className="flex justify-between text-xs sm:text-sm font-bold text-stone-700 mb-2">
-          <span>Ritmo do Salto</span>
-          <span className="font-mono text-indigo-700">{speedMs}ms</span>
+      {/* Controle de Velocidade */}
+      <div className="card-duo p-5 mb-4 space-y-2">
+        <div className="flex items-center justify-between text-xs font-black uppercase text-stone-400">
+          <span>Intervalo de Salto</span>
+          <span className="font-mono text-sm text-[#131F24]">{speedMs} ms</span>
         </div>
-        <input
-          type="range"
-          min="250"
-          max="700"
-          step="50"
-          value={speedMs}
-          disabled={isPlaying}
-          onChange={(e) => setSpeedMs(Number(e.target.value))}
-          className="w-full accent-indigo-600 bg-stone-100 h-2.5 rounded-lg cursor-pointer"
-        />
-        <div className="flex justify-between text-xs text-stone-500 font-mono font-bold mt-2">
-          <span>Rápido (250ms)</span>
-          <span>Médio (450ms)</span>
-          <span>Moderado (700ms)</span>
+        <div className="flex gap-2">
+          {[
+            { label: 'Rápido', ms: 350 },
+            { label: 'Normal', ms: 500 },
+            { label: 'Suave', ms: 700 }
+          ].map((item) => (
+            <button
+              key={item.ms}
+              onClick={() => setSpeedMs(item.ms)}
+              className={`flex-1 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer ${
+                speedMs === item.ms
+                  ? 'bg-[#FF9600] border-b-2 border-[#E58500] text-white'
+                  : 'btn-duo-white'
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Botões de Ação Estilo Duolingo */}
+      {/* Botões de Ação */}
       <div className="flex gap-3">
         <button
-          onClick={isPlaying ? handleStop : handleStart}
-          className={`flex-1 py-4 px-5 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2.5 transition-all shadow-md border-b-4 cursor-pointer active:scale-98 ${
-            isPlaying
-              ? 'bg-stone-100 hover:bg-stone-200 text-stone-800 border-stone-300'
-              : 'bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-800'
+          onClick={handleReset}
+          title="Reiniciar"
+          className="p-4 btn-duo-white flex items-center justify-center shrink-0 cursor-pointer"
+        >
+          <RotateCcw className="w-5 h-5 stroke-[2.5]" />
+        </button>
+
+        <button
+          onClick={isPlaying ? handlePause : handleStart}
+          className={`flex-1 py-4 px-6 text-lg font-black flex items-center justify-center gap-2 cursor-pointer ${
+            isPlaying ? 'btn-duo-yellow' : 'btn-duo-green'
           }`}
         >
           {isPlaying ? (
             <>
-              <Pause className="w-5 h-5 fill-current" />
+              <Pause className="w-6 h-6 fill-current" />
               <span>Pausar</span>
             </>
           ) : (
             <>
-              <Play className="w-5 h-5 fill-current" />
-              <span>{jumpsCount > 0 ? 'Retomar Treino' : 'Iniciar Treino'}</span>
+              <Play className="w-6 h-6 fill-current" />
+              <span>{isFinished ? 'Reiniciar' : 'Começar'}</span>
             </>
           )}
         </button>
-
-        <button
-          onClick={handleReset}
-          aria-label="Reiniciar"
-          className="p-4 rounded-2xl bg-white border-2 border-stone-200 text-stone-700 hover:text-stone-900 hover:bg-stone-50 transition-colors shadow-xs cursor-pointer active:scale-98"
-        >
-          <RotateCcw className="w-5 h-5" />
-        </button>
       </div>
+
+      {isFinished && onComplete && (
+        <button
+          onClick={() => onComplete(0, 2)}
+          className="w-full mt-4 py-4 px-6 btn-duo-green text-base font-black flex items-center justify-center gap-2 cursor-pointer animate-in fade-in"
+        >
+          <CheckCircle2 className="w-5 h-5 stroke-[2.5]" />
+          <span>Salvar Resultado do Treino</span>
+        </button>
+      )}
     </div>
   );
 };

@@ -16,7 +16,7 @@ import { RSVPReader } from './components/exercises/RSVPReader';
 import { ChunkingTrainer } from './components/exercises/ChunkingTrainer';
 import { SaccadicTrainer } from './components/exercises/SaccadicTrainer';
 import { ReadingTest } from './components/exercises/ReadingTest';
-import { getRandomAssessmentText, getRandomExerciseText } from './data/texts';
+import { getRecommendedTextForUser, READING_LIBRARY, getRandomAssessmentText, getRandomExerciseText } from './data/texts';
 
 export const App: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -24,6 +24,8 @@ export const App: React.FC = () => {
   const [dailyProgress, setDailyProgress] = useState<DailyProgress>(storage.getDailyProgress());
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
   const [isGuideOpen, setIsGuideOpen] = useState<boolean>(false);
+  const [sessionServedTitles, setSessionServedTitles] = useState<string[]>([]);
+  const [libraryTexts, setLibraryTexts] = useState<ReadingText[]>(READING_LIBRARY);
 
   // Estado de Exercício Ativo
   const [activeExercise, setActiveExercise] = useState<{
@@ -41,11 +43,16 @@ export const App: React.FC = () => {
     setResults(storage.getResults());
     setDailyProgress(storage.getDailyProgress());
 
-    // Sincronização em segundo plano para manter perfil e nuvem sempre alinhados
+    // Carregar textos dinamicamente do Supabase (appfr.texts / appfr_texts)
+    void storage.fetchRemoteTexts().then((remote) => {
+      if (remote && remote.length > 0) {
+        setLibraryTexts(remote);
+      }
+    });
+
+    // Sincronização em segundo plano
     if (loadedUser && loadedUser.email) {
       void storage.syncToRemote(loadedUser, storage.getResults(), storage.getDailyProgress());
-
-      // Sincroniza progresso diário salvo na nuvem
       void storage.fetchDailyProgressFromRemote(loadedUser.email).then((remoteDaily) => {
         if (remoteDaily) {
           setDailyProgress(remoteDaily);
@@ -55,7 +62,8 @@ export const App: React.FC = () => {
 
     // Se o usuário existir mas nunca realizou o teste diagnóstico inicial, abre o teste
     if (loadedUser && !loadedUser.initialTestCompleted) {
-      const initialText = getRandomAssessmentText();
+      const initialText = getRecommendedTextForUser(null, [], 'assessment', READING_LIBRARY, true);
+      setSessionServedTitles([initialText.title]);
       setActiveExercise({
         type: 'assessment',
         isInitialDiagnostic: true,
@@ -87,7 +95,8 @@ export const App: React.FC = () => {
     setUser(newUser);
 
     // Imediatamente abre o teste diagnóstico inicial com texto randomizado para medir o baseline!
-    const initialText = getRandomAssessmentText();
+    const initialText = getRecommendedTextForUser(null, [], 'assessment', libraryTexts, true);
+    setSessionServedTitles([initialText.title]);
     setActiveExercise({
       type: 'assessment',
       isInitialDiagnostic: true,
@@ -95,15 +104,15 @@ export const App: React.FC = () => {
     });
   };
 
-  // Restauração de Perfil Existente (por e-mail no celular ou código de sincronização)
+  // Restauração de Perfil Existente
   const handleRestoreUser = (restoredProfile: UserProfile) => {
     setUser(restoredProfile);
     setResults(storage.getResults());
     setDailyProgress(storage.getDailyProgress());
 
-    // Se o perfil já completou o teste inicial, NÃO abre o teste novamente!
     if (!restoredProfile.initialTestCompleted) {
-      const initialText = getRandomAssessmentText();
+      const initialText = getRecommendedTextForUser(restoredProfile, [], 'assessment', libraryTexts, true);
+      setSessionServedTitles([initialText.title]);
       setActiveExercise({
         type: 'assessment',
         isInitialDiagnostic: true,
@@ -127,7 +136,6 @@ export const App: React.FC = () => {
     if (!user) return;
 
     if (activeExercise?.isInitialDiagnostic) {
-      // Configurar baseline e meta de +50%
       const targetWpm = Math.round(data.wpm * 1.5);
       const updated = storage.updateUserProfile({
         baselineWpm: data.wpm,
@@ -142,7 +150,10 @@ export const App: React.FC = () => {
 
     const completedTitle = data.textTitle || activeExercise?.customText?.title || (activeExercise?.isInitialDiagnostic ? 'Teste Diagnóstico Inicial' : 'Teste de Aferição (+50%)');
 
-    // Salvar resultado
+    if (data.textId || completedTitle) {
+      storage.addRecentReadText(data.textId || '', completedTitle);
+    }
+
     storage.addResult({
       userId: user.id,
       exerciseType: 'assessment',
@@ -170,9 +181,15 @@ export const App: React.FC = () => {
     title: string,
     wpm?: number,
     durationMinutes: number = 3,
-    score?: number
+    score?: number,
+    textId?: string,
+    rawTextTitle?: string
   ) => {
     if (!user) return;
+
+    if (textId || rawTextTitle) {
+      storage.addRecentReadText(textId || '', rawTextTitle);
+    }
 
     storage.addResult({
       userId: user.id,
@@ -195,16 +212,31 @@ export const App: React.FC = () => {
     setActiveExercise(null);
   };
 
-  // Iniciar Etapa da Jornada Diária (com randomização de textos para evitar repetições)
+  // Obter lista consolidada de exclusões (persistente + histórico + sessão)
+  const getExclusionList = () => {
+    const persisted = storage.getRecentReadTexts();
+    const resultTitles = results.map(r => r.title);
+    return Array.from(new Set([
+      ...persisted,
+      ...resultTitles,
+      ...sessionServedTitles
+    ]));
+  };
+
+  // Iniciar Etapa da Jornada Diária (com recomendação automática baseada no desempenho)
   const handleStartDailyStep = (stepId: number, type: ExerciseType) => {
     let customText: ReadingText | undefined;
+    const exclusions = getExclusionList();
 
     if (type === 'assessment') {
-      const recentTitles = results.filter(r => r.exerciseType === 'assessment').map(r => r.title);
-      customText = getRandomAssessmentText(recentTitles);
+      customText = getRecommendedTextForUser(user, exclusions, 'assessment', libraryTexts, true);
     } else if (type === 'metronome' || type === 'rsvp' || type === 'chunking') {
-      const recentExerciseTitles = results.map(r => r.title);
-      customText = getRandomExerciseText(recentExerciseTitles);
+      customText = getRecommendedTextForUser(user, exclusions, type, libraryTexts, false);
+    }
+
+    if (customText) {
+      storage.addRecentReadText(customText.id, customText.title);
+      setSessionServedTitles(prev => [customText.title, ...prev.slice(0, 20)]);
     }
 
     setActiveExercise({
@@ -215,13 +247,22 @@ export const App: React.FC = () => {
     });
   };
 
-  // Iniciar Exercício do Catálogo Livre
+  // Iniciar Exercício do Treino Livre (com seleção automática de dificuldade)
   const handleSelectFreeExercise = (type: ExerciseType) => {
     let customText: ReadingText | undefined;
+    const exclusions = getExclusionList();
+
     if (type === 'assessment') {
-      const recentTitles = results.filter(r => r.exerciseType === 'assessment').map(r => r.title);
-      customText = getRandomAssessmentText(recentTitles);
+      customText = getRecommendedTextForUser(user, exclusions, 'assessment', libraryTexts, true);
+    } else if (type === 'metronome' || type === 'rsvp' || type === 'chunking') {
+      customText = getRecommendedTextForUser(user, exclusions, type, libraryTexts, false);
     }
+
+    if (customText) {
+      storage.addRecentReadText(customText.id, customText.title);
+      setSessionServedTitles(prev => [customText.title, ...prev.slice(0, 20)]);
+    }
+
     setActiveExercise({
       type,
       customText
@@ -230,6 +271,8 @@ export const App: React.FC = () => {
 
   // Iniciar Texto da Biblioteca
   const handleSelectTextForExercise = (text: ReadingText, exerciseType: ExerciseType) => {
+    storage.addRecentReadText(text.id, text.title);
+    setSessionServedTitles(prev => [text.title, ...prev.slice(0, 20)]);
     setActiveExercise({
       type: exerciseType,
       customText: text
@@ -242,10 +285,22 @@ export const App: React.FC = () => {
     setUser(null);
     setResults([]);
     setActiveExercise(null);
+    setSessionServedTitles([]);
+  };
+
+  const handleRetest = () => {
+    const exclusions = getExclusionList();
+    const randomText = getRecommendedTextForUser(user, exclusions, 'assessment', libraryTexts, true);
+    storage.addRecentReadText(randomText.id, randomText.title);
+    setSessionServedTitles(prev => [randomText.title, ...prev.slice(0, 20)]);
+    setActiveExercise({
+      type: 'assessment',
+      customText: randomText
+    });
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAF9] text-slate-800 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F7F7F7] text-[#131F24] flex flex-col font-sans">
       {/* Modal de Cadastro / Restauração Multi-Dispositivo */}
       <AuthModal
         isOpen={user === null}
@@ -253,7 +308,7 @@ export const App: React.FC = () => {
         onRestore={handleRestoreUser}
       />
 
-      {/* Modal do Guia Científico */}
+      {/* Modal do Guia Rápido */}
       <StudyGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
 
       {/* Header Fixo */}
@@ -289,12 +344,16 @@ export const App: React.FC = () => {
                 customText={activeExercise.customText}
                 isDailyStep={activeExercise.isDailyStep}
                 onBack={() => setActiveExercise(null)}
-                onComplete={(wpm, durMin) => {
+                onComplete={(wpm, durMin, textTitle, textId) => {
+                  const resolvedTitle = textTitle || activeExercise.customText?.title;
                   handleGenericExerciseComplete(
                     'metronome',
-                    `Metrônomo: ${activeExercise.customText?.title || 'Anti-Subvocalização'}`,
+                    resolvedTitle ? `Metrônomo: ${resolvedTitle}` : 'Metrônomo: Ritmo & Foco',
                     wpm,
-                    durMin
+                    durMin,
+                    undefined,
+                    textId || activeExercise.customText?.id,
+                    resolvedTitle
                   );
                 }}
               />
@@ -305,12 +364,16 @@ export const App: React.FC = () => {
                 customText={activeExercise.customText}
                 isDailyStep={activeExercise.isDailyStep}
                 onBack={() => setActiveExercise(null)}
-                onComplete={(wpm, durMin) => {
+                onComplete={(wpm, durMin, textTitle, textId) => {
+                  const resolvedTitle = textTitle || activeExercise.customText?.title;
                   handleGenericExerciseComplete(
                     'rsvp',
-                    `RSVP (ORP): ${activeExercise.customText?.title || 'Ponto Focal'}`,
+                    resolvedTitle ? `RSVP Turbo: ${resolvedTitle}` : 'RSVP Turbo: Ponto Focal',
                     wpm,
-                    durMin
+                    durMin,
+                    undefined,
+                    textId || activeExercise.customText?.id,
+                    resolvedTitle
                   );
                 }}
               />
@@ -321,12 +384,16 @@ export const App: React.FC = () => {
                 customText={activeExercise.customText}
                 isDailyStep={activeExercise.isDailyStep}
                 onBack={() => setActiveExercise(null)}
-                onComplete={(wpm, durMin) => {
+                onComplete={(wpm, durMin, textTitle, textId) => {
+                  const resolvedTitle = textTitle || activeExercise.customText?.title;
                   handleGenericExerciseComplete(
                     'chunking',
-                    `Blocos: ${activeExercise.customText?.title || 'Chunking'}`,
+                    resolvedTitle ? `Blocos: ${resolvedTitle}` : 'Blocos: Grupos de Palavras',
                     wpm,
-                    durMin
+                    durMin,
+                    undefined,
+                    textId || activeExercise.customText?.id,
+                    resolvedTitle
                   );
                 }}
               />
@@ -352,7 +419,7 @@ export const App: React.FC = () => {
                 customText={activeExercise.customText}
                 isInitialTest={activeExercise.isInitialDiagnostic}
                 baselineWpm={user?.baselineWpm || 0}
-                recentTitles={results.filter(r => r.exerciseType === 'assessment').map(r => r.title)}
+                recentTitles={getExclusionList()}
                 onBack={() => setActiveExercise(null)}
                 onComplete={handleAssessmentComplete}
               />
@@ -368,14 +435,8 @@ export const App: React.FC = () => {
                   dailyProgress={dailyProgress}
                   onNavigate={(tab) => setActiveTab(tab)}
                   onStartDailyWorkout={() => setActiveTab('journey')}
-                  onRetest={() => {
-                    const recentTitles = results.filter(r => r.exerciseType === 'assessment').map(r => r.title);
-                    const randomText = getRandomAssessmentText(recentTitles);
-                    setActiveExercise({
-                      type: 'assessment',
-                      customText: randomText
-                    });
-                  }}
+                  onRetest={handleRetest}
+                  onStartStep={handleStartDailyStep}
                 />
               )}
 
@@ -392,21 +453,17 @@ export const App: React.FC = () => {
               )}
 
               {activeTab === 'library' && (
-                <LibraryView onSelectTextForExercise={handleSelectTextForExercise} />
+                <LibraryView
+                  libraryTexts={libraryTexts}
+                  onSelectTextForExercise={handleSelectTextForExercise}
+                />
               )}
 
               {activeTab === 'progress' && (
                 <ProgressView
                   user={user}
                   results={results}
-                  onRetest={() => {
-                    const recentTitles = results.filter(r => r.exerciseType === 'assessment').map(r => r.title);
-                    const randomText = getRandomAssessmentText(recentTitles);
-                    setActiveExercise({
-                      type: 'assessment',
-                      customText: randomText
-                    });
-                  }}
+                  onRetest={handleRetest}
                 />
               )}
             </div>

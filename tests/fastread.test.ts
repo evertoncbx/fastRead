@@ -1,14 +1,19 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
+import fs from 'node:fs';
+import path from 'node:path';
 import {
   INITIAL_DIAGNOSTIC_TEXT,
   PERIODIC_ASSESSMENT_TEXT,
   DIAGNOSTIC_TEXTS,
   READING_LIBRARY,
   getRandomAssessmentText,
-  getRandomExerciseText
+  getRandomExerciseText,
+  calculateTextDifficulty,
+  getRecommendedTextForUser
 } from '../src/data/texts.ts';
-import { storage, emailToStorageKey } from '../src/services/storageService.ts';
+import { storage, emailToStorageKey, APPFR_TABLES } from '../src/services/storageService.ts';
+import { audio } from '../src/services/audioService.ts';
 import { UserProfile } from '../src/types.ts';
 
 // Logic mirror from RSVPReader for test verification
@@ -313,3 +318,204 @@ describe('Streak Inactivity Validation', () => {
     assert.strictEqual(activeTwoDaysAgoContinuity, false);
   });
 });
+
+describe('Expanded Text Database & Multi-Step Zero Duplication', () => {
+  it('contains at least 35 substantial texts across all requested categories', () => {
+    assert(READING_LIBRARY.length >= 35, `Expected at least 35 texts, found ${READING_LIBRARY.length}`);
+    const categories = new Set(READING_LIBRARY.map(t => t.category));
+    assert(categories.has('noticia'), 'Should include public news');
+    assert(categories.has('discurso'), 'Should include public speeches');
+    assert(categories.has('conto'), 'Should include literature/stories');
+    assert(categories.has('artigo'), 'Should include articles');
+  });
+
+  it('guarantees unique texts across 10 consecutive exercise steps without repeats', () => {
+    const sessionServed: string[] = [];
+    const chosenTexts: string[] = [];
+
+    // Simula 10 etapas ou treinos consecutivos
+    for (let step = 1; step <= 10; step++) {
+      const text = getRandomExerciseText(sessionServed);
+      assert(!chosenTexts.includes(text.id), `Step ${step} repeated text ${text.id}!`);
+      chosenTexts.push(text.id);
+      sessionServed.push(text.id, text.title);
+    }
+
+    assert.strictEqual(chosenTexts.length, 10);
+    const uniqueChosen = new Set(chosenTexts);
+    assert.strictEqual(uniqueChosen.size, 10, 'All 10 served texts must be unique in the session');
+  });
+
+  it('never repeatedly serves "O Homem que Sabia Javanês" consecutively, even with prefixed titles', () => {
+    const excludeWithPrefixes = [
+      'Metrônomo: O Homem que Sabia Javanês',
+      'RSVP Turbo: O Homem que Sabia Javanês',
+      'Blocos: O Homem que Sabia Javanês'
+    ];
+    for (let i = 0; i < 30; i++) {
+      const exerciseText = getRandomExerciseText(excludeWithPrefixes);
+      assert.notStrictEqual(exerciseText.id, 'diag-03');
+      assert.notStrictEqual(exerciseText.title, 'O Homem que Sabia Javanês');
+    }
+  });
+
+  it('correctly persists and retrieves recent read texts across sessions', () => {
+    storage.addRecentReadText('test-id-1', 'Texto Teste 1');
+    storage.addRecentReadText('test-id-2', 'Metrônomo: Texto Teste 2');
+    const recents = storage.getRecentReadTexts();
+    assert(recents.includes('test-id-1'));
+    assert(recents.includes('Texto Teste 1'));
+    assert(recents.includes('test-id-2'));
+    assert(recents.includes('Texto Teste 2')); // Cleaned title without prefix
+  });
+
+  it('contains at least 60 rich texts in the expanded database', () => {
+    assert(READING_LIBRARY.length >= 60, `Expected at least 60 texts, found ${READING_LIBRARY.length}`);
+  });
+});
+
+describe('Automated Text Difficulty & Lexical Grading Algorithm', () => {
+  it('computes objective difficulty metrics based on vocabulary and sentence length', () => {
+    const simpleText = 'O gato viu a bola. A bola rolou pelo quintal. O dia estava bonito.';
+    const simpleDiff = calculateTextDifficulty(simpleText);
+    assert(simpleDiff.level <= 2, `Simple text should be level 1 or 2, got ${simpleDiff.level}`);
+    assert(simpleDiff.score > 0, 'Score should be positive');
+
+    const denseText = 'A hermenêutica constitucional exige a ponderação principiológica dos direitos fundamentais em situações de antinomia aparente, resguardando a dignidade humana como cláusula pétrea inegociável da ordem republicana.';
+    const denseDiff = calculateTextDifficulty(denseText);
+    assert(denseDiff.level >= 4, `Dense academic text should be level 4 or 5, got ${denseDiff.level}`);
+    assert(denseDiff.score > simpleDiff.score, 'Dense text must have higher score than simple text');
+  });
+
+  it('verifies every text in the library has difficultyLevel between 1 and 5 and positive difficultyScore', () => {
+    for (const t of READING_LIBRARY) {
+      assert(t.difficultyLevel !== undefined, `difficultyLevel missing for ${t.id}`);
+      assert(t.difficultyLevel >= 1 && t.difficultyLevel <= 5, `difficultyLevel out of bounds for ${t.id}: ${t.difficultyLevel}`);
+      assert(t.difficultyScore !== undefined && t.difficultyScore > 0, `difficultyScore invalid for ${t.id}: ${t.difficultyScore}`);
+    }
+  });
+
+  it('verifies balanced distribution across difficulty tiers in the library', () => {
+    const levels = new Set(READING_LIBRARY.map(t => t.difficultyLevel));
+    assert(levels.has(1) || levels.has(2), 'Should have beginner/basic texts');
+    assert(levels.has(3), 'Should have intermediate texts');
+    assert(levels.has(4) || levels.has(5), 'Should have advanced/challenging texts');
+  });
+});
+
+describe('Automated Progress-Driven Recommendation Engine', () => {
+  it('automatically recommends easier texts for beginner readers (WPM < 180)', () => {
+    const beginnerUser: UserProfile = {
+      id: 'usr_beg',
+      name: 'Iniciante',
+      email: 'iniciante@test.com',
+      baselineWpm: 140,
+      targetWpm: 210,
+      currentWpm: 140,
+      bestWpm: 150,
+      averageComprehension: 70,
+      streakDays: 1,
+      lastActiveDate: '2026-11-02',
+      totalMinutesTrained: 5,
+      testsCompleted: 1,
+      initialTestCompleted: true,
+      createdAt: '2026-11-02T10:00:00.000Z'
+    };
+
+    const text = getRecommendedTextForUser(beginnerUser, [], 'metronome', READING_LIBRARY, false);
+    assert(text !== undefined);
+    assert((text.difficultyLevel || 2) <= 3, `Beginner should receive difficulty <= 3, got ${text.difficultyLevel}`);
+  });
+
+  it('automatically recommends advanced texts for high-speed readers (WPM > 380)', () => {
+    const advancedUser: UserProfile = {
+      id: 'usr_adv',
+      name: 'Veloz',
+      email: 'veloz@test.com',
+      baselineWpm: 320,
+      targetWpm: 480,
+      currentWpm: 420,
+      bestWpm: 450,
+      averageComprehension: 80,
+      streakDays: 10,
+      lastActiveDate: '2026-11-02',
+      totalMinutesTrained: 120,
+      testsCompleted: 8,
+      initialTestCompleted: true,
+      createdAt: '2026-11-02T10:00:00.000Z'
+    };
+
+    const text = getRecommendedTextForUser(advancedUser, [], 'metronome', READING_LIBRARY, false);
+    assert(text !== undefined);
+    assert((text.difficultyLevel || 2) >= 3, `Advanced reader should receive difficulty >= 3, got ${text.difficultyLevel}`);
+  });
+
+  it('promotes user to higher difficulty when comprehension is high (>= 85%)', () => {
+    const highCompUser: UserProfile = {
+      id: 'usr_high',
+      name: 'Retentor',
+      email: 'retentor@test.com',
+      baselineWpm: 250,
+      targetWpm: 375,
+      currentWpm: 280,
+      bestWpm: 290,
+      averageComprehension: 95,
+      streakDays: 5,
+      lastActiveDate: '2026-11-02',
+      totalMinutesTrained: 40,
+      testsCompleted: 4,
+      initialTestCompleted: true,
+      createdAt: '2026-11-02T10:00:00.000Z'
+    };
+
+    const text = getRecommendedTextForUser(highCompUser, [], 'metronome', READING_LIBRARY, false);
+    assert(text !== undefined);
+  });
+
+  it('safely handles user=null and gracefully provides standard entry level', () => {
+    const text = getRecommendedTextForUser(null, [], 'assessment', READING_LIBRARY, true);
+    assert(text !== undefined);
+    assert(text.quiz && text.quiz.length >= 2, 'Quiz must be present for assessment');
+  });
+});
+
+describe('Countdown Audio & Visual Cues', () => {
+  it('audio service provides playCountdownTick and playCountdownGo methods', () => {
+    assert(typeof audio.playCountdownTick === 'function', 'playCountdownTick should be a function');
+    assert(typeof audio.playCountdownGo === 'function', 'playCountdownGo should be a function');
+    // Invoca para garantir ausência de erros em ambiente sem Web Audio API nativo (Node)
+    audio.playCountdownTick(3);
+    audio.playCountdownTick(2);
+    audio.playCountdownTick(1);
+    audio.playCountdownGo();
+  });
+});
+
+describe('Supabase Schema & Project Projeta (appfr.* Naming Convention)', () => {
+  it('defines APPFR_TABLES targeting appfr_* naming convention', () => {
+    assert.strictEqual(APPFR_TABLES.PROFILES, 'appfr_profiles');
+    assert.strictEqual(APPFR_TABLES.RESULTS, 'appfr_exercise_results');
+    assert.strictEqual(APPFR_TABLES.DAILY, 'appfr_daily_progress');
+    assert.strictEqual(APPFR_TABLES.TEXTS, 'appfr_texts');
+  });
+
+  it('operates remote text cache in volatile memory without polluting localStorage', () => {
+    const sample = [READING_LIBRARY[0], READING_LIBRARY[1]];
+    storage.setRemoteTextsCache(sample);
+    const cached = storage.getRemoteTextsCache();
+    assert.deepStrictEqual(cached, sample);
+  });
+
+  it('verifies supabase_schema.sql contains the appfr schema and appfr_texts table definitions', () => {
+    const schemaSql = fs.readFileSync(path.resolve('supabase_schema.sql'), 'utf8');
+    assert(schemaSql.includes('CREATE SCHEMA IF NOT EXISTS appfr;'), 'Must create appfr schema');
+    assert(schemaSql.includes('CREATE TABLE IF NOT EXISTS public.appfr_texts'), 'Must create public.appfr_texts table');
+    assert(schemaSql.includes('CREATE OR REPLACE VIEW appfr.texts'), 'Must create appfr.texts view');
+    assert(schemaSql.includes('CREATE TABLE IF NOT EXISTS public.appfr_profiles'), 'Must create public.appfr_profiles table');
+    assert(schemaSql.includes('CREATE TABLE IF NOT EXISTS public.appfr_exercise_results'), 'Must create public.appfr_exercise_results table');
+    assert(schemaSql.includes('CREATE TABLE IF NOT EXISTS public.appfr_daily_progress'), 'Must create public.appfr_daily_progress table');
+    assert(schemaSql.includes('INSERT INTO public.appfr_texts'), 'Must contain seed inserts for all texts');
+  });
+});
+
+

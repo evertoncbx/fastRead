@@ -159,6 +159,72 @@ class AudioService {
       // Silent fail
     }
   }
+
+  /**
+   * Som de bipe do contador regressivo (3... 2... 1...)
+   */
+  public playCountdownTick(count: number = 3) {
+    if (!this.soundEnabled) return;
+    try {
+      const ctx = this.getContext();
+      if (!ctx) return;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const now = ctx.currentTime;
+
+      // Frequência sobe ligeiramente conforme se aproxima do 1
+      const freq = count === 1 ? 880 : (count === 2 ? 784 : 698.46);
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now);
+      osc.frequency.exponentialRampToValueAtTime(freq * 1.05, now + 0.08);
+
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.12);
+    } catch {
+      // Silent fail
+    }
+  }
+
+  /**
+   * Som de início do exercício após contagem ("Vai!")
+   */
+  public playCountdownGo() {
+    if (!this.soundEnabled) return;
+    try {
+      const ctx = this.getContext();
+      if (!ctx) return;
+
+      const now = ctx.currentTime;
+      const chords = [1046.5, 1318.5]; // C6 e E6
+
+      chords.forEach((freq) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now);
+
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.25);
+      });
+    } catch {
+      // Silent fail
+    }
+  }
 }
 
 export const audio = new AudioService();

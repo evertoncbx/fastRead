@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Flame, BookOpen, HelpCircle, Cloud, Check, X, Smartphone, RefreshCw, LogOut } from 'lucide-react';
+import { Flame, BookOpen, HelpCircle, Cloud, Check, X, Smartphone, RefreshCw, LogOut, Zap } from 'lucide-react';
 import { UserProfile } from '../types';
 import { storage } from '../services/storageService';
 
@@ -17,163 +17,142 @@ export const Header: React.FC<HeaderProps> = ({ user, onOpenGuide, onLogout }) =
   const handleForceSync = async () => {
     if (!user) return;
     setIsSyncing(true);
-    setSyncStatus('Sincronizando com a nuvem...');
+    setSyncStatus('Sincronizando...');
     const ok = await storage.syncToRemote(user, storage.getResults(), storage.getDailyProgress());
     setIsSyncing(false);
     if (ok) {
-      setSyncStatus('Sincronizado com o Supabase com sucesso!');
+      setSyncStatus('Sincronizado com sucesso!');
     } else {
-      setSyncStatus('Dados salvos localmente.');
+      setSyncStatus('Dados salvos no aparelho.');
     }
     setTimeout(() => setSyncStatus(''), 3000);
   };
 
   return (
     <>
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b-2 border-stone-200 shadow-xs px-4 py-3">
+      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b-2 border-stone-200 px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center justify-between">
-          {/* Brand Logo & Name */}
+          {/* Logo & Marca */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-600/25 border-b-2 border-emerald-800">
-              <BookOpen className="w-5 h-5" />
+            <div className="w-12 h-12 rounded-2xl bg-[#58CC02] border-b-4 border-[#46A302] flex items-center justify-center text-white shadow-sm shrink-0">
+              <BookOpen className="w-7 h-7 stroke-[2.5]" />
             </div>
             <div>
-              <h1 className="text-base font-black tracking-tight text-stone-900 flex items-center gap-1.5">
-                LEITOX
-                <span className="text-xs bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full font-mono font-black">
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-black tracking-tight text-[#131F24]">
+                  LEITOX
+                </h1>
+                <span className="text-xs sm:text-sm bg-[#FFC800] text-[#7A5000] border-2 border-[#E5A500] px-2.5 py-0.5 rounded-full font-black">
                   +50%
                 </span>
-              </h1>
-              <p className="text-xs text-stone-600 font-semibold">
-                {user ? `Olá, ${user.name.split(' ')[0]}` : 'Leitura Dinâmica'}
+              </div>
+              <p className="text-sm text-stone-500 font-extrabold">
+                {user ? `Olá, ${user.name.split(' ')[0]}!` : 'Treino Diário'}
               </p>
             </div>
           </div>
 
-          {/* Right Stats & Action Buttons */}
+          {/* Indicadores & Ações */}
           <div className="flex items-center gap-2">
             {user && (
               <>
-                {/* Streak Counter */}
+                {/* Contador de Dias / Streak */}
                 <div
                   title="Dias Seguidos de Treino"
-                  className="flex items-center gap-1.5 bg-amber-50 border-2 border-amber-200 px-3 py-1.5 rounded-xl text-amber-800 text-xs font-mono font-black"
+                  className="flex items-center gap-1.5 bg-[#FFF8D9] border-2 border-[#FFE680] border-b-4 border-b-[#E5A500] px-3.5 py-1.5 rounded-2xl text-[#B8860B] text-base font-black"
                 >
-                  <Flame className="w-4 h-4 fill-amber-500 text-amber-500" />
-                  <span>{user.streakDays}d</span>
+                  <Flame className="w-6 h-6 fill-[#FF9600] text-[#FF9600]" />
+                  <span>{user.streakDays}</span>
                 </div>
 
-                {/* Current Speed Badge */}
+                {/* Velocidade Atual */}
                 <div
-                  title="PPM Atual"
-                  className="flex items-center gap-1 bg-stone-100 border-2 border-stone-200 px-3 py-1.5 rounded-xl text-stone-900 text-xs font-mono font-black"
+                  title="Sua Velocidade Atual"
+                  className="flex items-center gap-1.5 bg-stone-100 border-2 border-stone-200 border-b-4 border-b-stone-300 px-3.5 py-1.5 rounded-2xl text-[#131F24] text-base font-black"
                 >
+                  <Zap className="w-5 h-5 text-[#58CC02] fill-[#58CC02]" />
                   <span>{user.currentWpm}</span>
-                  <span className="text-xs text-stone-600 font-bold">PPM</span>
+                  <span className="text-xs text-stone-400 font-black">PPM</span>
                 </div>
 
-                {/* Cloud Sync Button */}
+                {/* Sincronização */}
                 <button
                   onClick={() => setShowSyncModal(true)}
-                  title="Sincronização na Nuvem"
-                  className="p-2 rounded-xl bg-stone-100 hover:bg-stone-200 border-2 border-stone-200 text-stone-700 hover:text-emerald-700 transition-colors cursor-pointer"
+                  title="Sincronizar Dispositivos"
+                  className="p-2.5 rounded-2xl bg-white border-2 border-stone-200 border-b-4 border-b-stone-300 hover:bg-stone-50 text-stone-600 hover:text-[#1CB0F6] transition-all cursor-pointer active:border-b-2 active:translate-y-[2px]"
                 >
-                  <Cloud className="w-5 h-5" />
+                  <Cloud className="w-5 h-5 stroke-[2.5]" />
                 </button>
               </>
             )}
 
-            {/* Guide Button */}
+            {/* Guia Rápido */}
             <button
               onClick={onOpenGuide}
-              title="Guia Científico e Métodos"
-              className="p-2 rounded-xl bg-stone-100 hover:bg-stone-200 border-2 border-stone-200 text-stone-700 hover:text-stone-900 transition-colors cursor-pointer"
+              title="Como Funciona o Treino"
+              className="p-2.5 rounded-2xl bg-white border-2 border-stone-200 border-b-4 border-b-stone-300 hover:bg-stone-50 text-stone-600 hover:text-stone-900 transition-all cursor-pointer active:border-b-2 active:translate-y-[2px]"
             >
-              <HelpCircle className="w-5 h-5" />
+              <HelpCircle className="w-5 h-5 stroke-[2.5]" />
             </button>
           </div>
         </div>
       </header>
 
-      {/* MODAL DE SINCRONIZAÇÃO NUVEM AMARRADO AO E-MAIL */}
+      {/* MODAL DE SINCRONIZAÇÃO */}
       {showSyncModal && user && (
-        <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border-2 border-stone-200 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150 text-stone-800">
-            <div className="flex items-center justify-between">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border-2 border-stone-200 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between pb-2 border-b-2 border-stone-100">
               <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center text-emerald-700">
-                  <Smartphone className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-2xl bg-[#DDF4FF] border-2 border-[#1899D6] flex items-center justify-center text-[#1899D6]">
+                  <Cloud className="w-5 h-5 stroke-[2.5]" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-stone-900">Sincronização & Celular</h3>
-                  <p className="text-xs text-stone-500 font-medium">Conectado ao Supabase (fr_*)</p>
+                  <h3 className="text-base font-black text-[#131F24]">Sincronização</h3>
+                  <p className="text-xs text-stone-500 font-bold">Seus dados em qualquer aparelho</p>
                 </div>
               </div>
-
               <button
                 onClick={() => setShowSyncModal(false)}
-                className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
+                className="p-1.5 rounded-xl bg-stone-100 text-stone-400 hover:text-stone-700 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-4 rounded-2xl bg-stone-50 border-2 border-stone-200 space-y-2 text-xs sm:text-sm">
-              <div className="flex justify-between items-center text-stone-600">
-                <span className="font-semibold">E-mail vinculado:</span>
-                <strong className="text-stone-900 font-mono font-bold">{user.email}</strong>
-              </div>
-              <div className="flex justify-between items-center text-stone-600">
-                <span className="font-semibold">Meta de leitura:</span>
-                <strong className="text-emerald-700 font-mono font-bold">{user.targetWpm} PPM (+50%)</strong>
-              </div>
-              <div className="flex justify-between items-center text-stone-600">
-                <span className="font-semibold">Status do Banco:</span>
-                <span className="text-emerald-700 font-bold flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Supabase Ativo
-                </span>
-              </div>
+            <div className="bg-stone-50 border-2 border-stone-200 rounded-2xl p-4 text-center space-y-1">
+              <span className="text-xs text-stone-500 font-black uppercase tracking-wider block">Conta Vinculada</span>
+              <p className="text-sm font-black text-[#131F24] truncate">{user.email}</p>
             </div>
 
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               <button
                 onClick={handleForceSync}
                 disabled={isSyncing}
-                className="w-full py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white text-sm font-bold flex items-center justify-center gap-2 shadow-sm border-b-4 border-emerald-800 transition-all cursor-pointer disabled:opacity-50"
+                className="w-full py-3.5 px-4 btn-duo-green flex items-center justify-center gap-2 text-sm cursor-pointer"
               >
-                {isSyncing ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Cloud className="w-4 h-4" />
-                )}
-                <span>{isSyncing ? 'Sincronizando...' : 'Sincronizar Agora na Nuvem'}</span>
+                <RefreshCw className={`w-4 h-4 stroke-[2.5] ${isSyncing ? 'animate-spin' : ''}`} />
+                <span>{isSyncing ? 'Sincronizando...' : 'Sincronizar Agora'}</span>
               </button>
-            </div>
 
-            {syncStatus && (
-              <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 text-center font-bold flex items-center justify-center gap-1.5">
-                <Check className="w-4 h-4 text-emerald-600" />
-                <span>{syncStatus}</span>
-              </div>
-            )}
-
-            <div className="bg-emerald-50/70 border border-emerald-200 p-3 rounded-xl text-xs text-emerald-900 leading-relaxed text-center font-medium">
-              💡 Para acessar seu treino no celular ou em outro computador, basta abrir o Leitox e digitar seu e-mail: <strong>{user.email}</strong>. Seu histórico e progresso diário serão carregados na hora!
+              {syncStatus && (
+                <div className="text-center text-xs font-black text-[#46A302] bg-[#D7FFB8] py-2 px-3 rounded-xl border-2 border-[#A8EE69]">
+                  {syncStatus}
+                </div>
+              )}
             </div>
 
             {onLogout && (
-              <div className="pt-2 border-t-2 border-stone-200">
-                <button
-                  onClick={() => {
-                    setShowSyncModal(false);
-                    onLogout();
-                  }}
-                  className="w-full py-2.5 rounded-xl text-xs sm:text-sm text-rose-600 hover:text-rose-700 hover:bg-rose-50 font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Sair ou Trocar de Conta</span>
-                </button>
-              </div>
+              <button
+                onClick={() => {
+                  setShowSyncModal(false);
+                  onLogout();
+                }}
+                className="w-full py-3 px-4 btn-duo-white text-xs flex items-center justify-center gap-2 cursor-pointer text-rose-600 hover:text-rose-700"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Trocar de Conta</span>
+              </button>
             )}
           </div>
         </div>

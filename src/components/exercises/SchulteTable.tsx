@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, RotateCcw, CheckCircle2, Trophy, Eye, Zap, ArrowLeft, Volume2, VolumeX } from 'lucide-react';
+import { Play, RotateCcw, CheckCircle2, Trophy, Eye, Volume2, VolumeX, ArrowLeft } from 'lucide-react';
 import { audio } from '../../services/audioService';
+import { CountdownOverlay } from './CountdownOverlay';
 import confetti from 'canvas-confetti';
 
 interface SchulteTableProps {
@@ -14,6 +15,7 @@ export const SchulteTable: React.FC<SchulteTableProps> = ({ onComplete, onBack, 
   const [numbers, setNumbers] = useState<number[]>([]);
   const [currentExpected, setCurrentExpected] = useState<number>(1);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [showCountdown, setShowCountdown] = useState<boolean>(false);
   const [isFinished, setIsFinished] = useState<boolean>(false);
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [lastErrorIndex, setLastErrorIndex] = useState<number | null>(null);
@@ -49,6 +51,11 @@ export const SchulteTable: React.FC<SchulteTableProps> = ({ onComplete, onBack, 
   }, [gridSize]);
 
   const handleStart = () => {
+    setShowCountdown(true);
+  };
+
+  const startActualGame = () => {
+    setShowCountdown(false);
     generateGrid(gridSize);
     setIsPlaying(true);
     startTimeRef.current = performance.now();
@@ -60,6 +67,7 @@ export const SchulteTable: React.FC<SchulteTableProps> = ({ onComplete, onBack, 
 
   const handleStop = () => {
     if (timerRef.current) clearInterval(timerRef.current);
+    setShowCountdown(false);
     setIsPlaying(false);
   };
 
@@ -97,93 +105,94 @@ export const SchulteTable: React.FC<SchulteTableProps> = ({ onComplete, onBack, 
   };
 
   return (
-    <div className="flex flex-col min-h-full max-w-lg mx-auto p-4 pb-24 text-stone-800">
+    <div className="flex flex-col min-h-full max-w-lg mx-auto p-4 pb-28 text-[#131F24]">
+      {/* Contador Regressivo de 3 Segundos */}
+      <CountdownOverlay
+        isActive={showCountdown}
+        onComplete={startActualGame}
+        title="Tabela de Schulte"
+      />
+
       {/* Top bar */}
       <div className="flex items-center justify-between mb-4">
         {onBack ? (
           <button
             onClick={onBack}
-            className="flex items-center gap-1.5 text-sm text-stone-600 hover:text-stone-900 transition-colors py-1 px-2.5 rounded-lg bg-white border border-stone-200 shadow-2xs"
+            className="btn-duo-white py-2 px-3 text-sm flex items-center gap-1.5 cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Voltar</span>
           </button>
         ) : <div />}
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={toggleSound}
-            aria-label="Alternar som"
-            className="p-2 rounded-lg bg-white border border-stone-200 text-stone-600 hover:text-stone-900 shadow-2xs transition-colors"
-          >
-            {soundOn ? <Volume2 className="w-4 h-4 text-emerald-600" /> : <VolumeX className="w-4 h-4 text-stone-400" />}
-          </button>
-        </div>
+        <button
+          onClick={toggleSound}
+          aria-label="Alternar som"
+          className="p-2 rounded-2xl bg-white border-2 border-stone-200 border-b-4 border-b-stone-300 text-stone-600 cursor-pointer"
+        >
+          {soundOn ? <Volume2 className="w-5 h-5 text-[#58CC02]" /> : <VolumeX className="w-5 h-5 text-stone-400" />}
+        </button>
       </div>
 
       {/* Header Info */}
-      <div className="bg-white p-4 rounded-2xl border border-stone-200 mb-4 shadow-xs">
-        <div className="flex items-center gap-2.5 mb-1.5">
-          <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700">
-            <Eye className="w-5 h-5" />
+      <div className="card-duo p-5 mb-4 space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-[#FFF8D9] border-2 border-[#FFE680] flex items-center justify-center text-[#B8860B]">
+              <Eye className="w-6 h-6 stroke-[2.5]" />
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-[#131F24]">
+                Tabela de Schulte
+              </h2>
+            </div>
           </div>
-          <div>
-            <h2 className="text-lg font-bold text-stone-900 flex items-center gap-2">
-              Tabela de Schulte
-              {isDailyStep && <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-medium">Jornada</span>}
-            </h2>
-            <p className="text-xs text-stone-500">Expansão de visão periférica e percepção parafoveal</p>
-          </div>
-        </div>
 
-        {/* Dica Científica */}
-        <div className="mt-3 bg-amber-50/80 p-2.5 rounded-xl border border-amber-200 text-xs text-amber-800 flex items-start gap-2">
-          <Zap className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-          <span>
-            <strong className="text-amber-900">Instrução:</strong> Mantenha o olhar fixo no <span className="text-amber-800 font-bold">ponto central</span>. Use a visão periférica para encontrar os números de 1 até {totalNumbers} sem desviar o foco.
+          <span className="text-xs font-black bg-[#FFF8D9] text-[#B8860B] border-2 border-[#FFE680] px-3 py-1 rounded-full">
+            {gridSize}x{gridSize}
           </span>
         </div>
       </div>
 
       {/* Status Bar */}
       <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="bg-white border-2 border-stone-200 p-3.5 rounded-2xl flex items-center justify-between shadow-xs">
+        <div className="card-duo p-4 flex items-center justify-between">
           <div>
-            <span className="text-xs uppercase tracking-wider text-stone-600 block font-bold mb-0.5">Próximo Alvo</span>
-            <span className="text-2xl font-black text-emerald-700 font-mono">
-              {isFinished ? '✓ CONCLUÍDO' : `${currentExpected} / ${totalNumbers}`}
+            <span className="text-xs uppercase tracking-wider text-stone-400 block font-black">Próximo Número</span>
+            <span className="text-3xl font-black text-[#58CC02] font-mono">
+              {isFinished ? '✓ FIM' : currentExpected}
             </span>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center font-black text-emerald-700 text-xl">
+          <div className="w-12 h-12 rounded-2xl bg-[#D7FFB8] border-2 border-[#A8EE69] flex items-center justify-center font-black text-[#46A302] text-2xl">
             {currentExpected <= totalNumbers ? currentExpected : '★'}
           </div>
         </div>
 
-        <div className="bg-white border-2 border-stone-200 p-3.5 rounded-2xl flex items-center justify-between shadow-xs">
+        <div className="card-duo p-4 flex items-center justify-between">
           <div>
-            <span className="text-xs uppercase tracking-wider text-stone-600 block font-bold mb-0.5">Tempo Decorrido</span>
-            <span className="text-2xl font-black text-stone-900 font-mono">
+            <span className="text-xs uppercase tracking-wider text-stone-400 block font-black">Tempo</span>
+            <span className="text-3xl font-black text-[#131F24] font-mono">
               {elapsedTime.toFixed(1)}s
             </span>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-stone-100 border-2 border-stone-200 flex items-center justify-center text-stone-600">
-            <RotateCcw className="w-5 h-5" />
+          <div className="w-12 h-12 rounded-2xl bg-stone-100 border-2 border-stone-200 flex items-center justify-center text-stone-500 font-bold">
+            <RotateCcw className="w-6 h-6" />
           </div>
         </div>
       </div>
 
       {/* Dimensão da Tabela */}
       {!isPlaying && (
-        <div className="flex items-center justify-center gap-2 mb-4 bg-white p-1.5 rounded-xl border border-stone-200 shadow-2xs">
-          <span className="text-xs text-stone-500 font-medium px-2">Dimensão:</span>
+        <div className="flex items-center justify-center gap-2 mb-4 bg-white p-2 rounded-2xl border-2 border-stone-200">
+          <span className="text-xs font-black text-stone-400 px-2">Grade:</span>
           {[3, 4, 5].map((size) => (
             <button
               key={size}
               onClick={() => setGridSize(size)}
-              className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
+              className={`py-1.5 px-4 text-xs font-black rounded-xl transition-all cursor-pointer ${
                 gridSize === size
-                  ? 'bg-emerald-600 text-white shadow-2xs'
-                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+                  ? 'bg-[#FFC800] border-b-2 border-[#E5A500] text-white'
+                  : 'btn-duo-white'
               }`}
             >
               {size}x{size} {size === 5 ? '(Padrão)' : ''}
@@ -193,11 +202,11 @@ export const SchulteTable: React.FC<SchulteTableProps> = ({ onComplete, onBack, 
       )}
 
       {/* O Grid da Tabela de Schulte */}
-      <div className="relative aspect-square w-full max-w-[360px] mx-auto bg-stone-100/70 p-3 rounded-2xl border-2 border-stone-200 shadow-xs flex items-center justify-center">
-        {/* Ponto Central de Fixação Parafoveal */}
+      <div className="relative aspect-square w-full max-w-[380px] mx-auto bg-stone-100 p-3 rounded-3xl border-2 border-stone-200 mb-4 flex items-center justify-center">
+        {/* Ponto Central de Fixação */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10">
-          <div className="w-3.5 h-3.5 rounded-full bg-emerald-500/20 border border-emerald-600 flex items-center justify-center shadow-xs">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-ping opacity-75" />
+          <div className="w-4 h-4 rounded-full bg-[#58CC02]/30 border-2 border-[#58CC02] flex items-center justify-center">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#58CC02]" />
           </div>
         </div>
 
@@ -209,7 +218,7 @@ export const SchulteTable: React.FC<SchulteTableProps> = ({ onComplete, onBack, 
           }}
         >
           {numbers.map((num, idx) => {
-            const isCompleted = num < currentExpected;
+            const isClicked = num < currentExpected;
             const isError = lastErrorIndex === idx;
 
             return (
@@ -217,16 +226,14 @@ export const SchulteTable: React.FC<SchulteTableProps> = ({ onComplete, onBack, 
                 key={idx}
                 disabled={!isPlaying || isFinished}
                 onClick={() => handleCellClick(num, idx)}
-                className={`flex items-center justify-center font-mono font-bold rounded-xl transition-all duration-150 select-none ${
-                  gridSize === 3 ? 'text-2xl' : gridSize === 4 ? 'text-xl' : 'text-base'
+                className={`flex items-center justify-center rounded-2xl font-mono font-black transition-all select-none cursor-pointer ${
+                  gridSize === 3 ? 'text-3xl' : gridSize === 4 ? 'text-2xl' : 'text-xl'
                 } ${
-                  isCompleted
-                    ? 'bg-stone-100 text-stone-300 border border-stone-200'
-                    : isError
-                    ? 'bg-rose-600 text-white scale-95'
-                    : isPlaying
-                    ? 'bg-white text-stone-900 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-400 border border-stone-200 active:scale-95 shadow-2xs'
-                    : 'bg-white/80 text-stone-400 border border-stone-200'
+                  isError
+                    ? 'bg-[#FF4B4B] text-white border-2 border-[#EA2B2B] scale-95'
+                    : isClicked
+                    ? 'bg-[#D7FFB8] text-[#46A302] border-2 border-[#A8EE69] opacity-80'
+                    : 'bg-white text-[#131F24] border-2 border-stone-200 border-b-4 border-b-stone-300 hover:bg-stone-50 active:border-b-2 active:translate-y-[2px]'
                 }`}
               >
                 {num}
@@ -234,73 +241,36 @@ export const SchulteTable: React.FC<SchulteTableProps> = ({ onComplete, onBack, 
             );
           })}
         </div>
+      </div>
 
-        {/* Overlay quando parado */}
-        {!isPlaying && !isFinished && (
-          <div className="absolute inset-0 bg-white/95 backdrop-blur-xs rounded-2xl flex flex-col items-center justify-center p-6 text-center z-20">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 mb-3 shadow-xs">
-              <Eye className="w-7 h-7" />
-            </div>
-            <h3 className="text-base font-bold text-stone-900 mb-1">Pronto para treinar a visão?</h3>
-            <p className="text-xs text-stone-500 max-w-xs mb-5">
-              Foque no ponto central da tabela. Localize os números em ordem crescente (1 a {totalNumbers}).
-            </p>
-            <button
-              onClick={handleStart}
-              className="w-full max-w-xs py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xs active:scale-98 transition-all"
-            >
-              <Play className="w-5 h-5 fill-current" />
-              <span>Iniciar Tabela ({gridSize}x{gridSize})</span>
-            </button>
-          </div>
-        )}
-
-        {/* Overlay quando vitorioso */}
-        {isFinished && (
-          <div className="absolute inset-0 bg-white/95 backdrop-blur-md rounded-2xl flex flex-col items-center justify-center p-6 text-center z-20">
-            <div className="w-14 h-14 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 mb-2">
-              <Trophy className="w-7 h-7" />
-            </div>
-            <h3 className="text-lg font-extrabold text-stone-900 mb-1">Excelente Foco Visual!</h3>
-            <p className="text-xs text-stone-500 mb-3">Tabela {gridSize}x{gridSize} concluída com sucesso.</p>
-
-            <div className="bg-stone-50 border-2 border-stone-200 py-3.5 px-6 rounded-2xl mb-4 text-center">
-              <span className="text-xs text-stone-500 uppercase tracking-wider block font-bold mb-1">Tempo Total</span>
-              <span className="text-3xl font-black text-emerald-700 font-mono">{elapsedTime.toFixed(1)}s</span>
-            </div>
-
-            <div className="flex gap-3 w-full max-w-xs">
-              <button
-                onClick={handleStart}
-                className="flex-1 py-3.5 px-4 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 border-2 border-stone-200 transition-all cursor-pointer active:scale-98"
-              >
-                <RotateCcw className="w-4 h-4" />
-                <span>Repetir</span>
-              </button>
-              {onComplete && (
-                <button
-                  onClick={() => onComplete(Number(elapsedTime.toFixed(2)))}
-                  className="flex-1 py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md border-b-4 border-emerald-800 transition-all cursor-pointer active:scale-98"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Avançar</span>
-                </button>
-              )}
-            </div>
-          </div>
+      {/* Controles Play / Stop */}
+      <div className="flex gap-3">
+        {!isPlaying ? (
+          <button
+            onClick={handleStart}
+            className="flex-1 py-4 px-6 btn-duo-green text-lg font-black flex items-center justify-center gap-2 cursor-pointer shadow-md"
+          >
+            <Play className="w-6 h-6 fill-current" />
+            <span>Começar Treino</span>
+          </button>
+        ) : (
+          <button
+            onClick={handleStop}
+            className="flex-1 py-4 px-6 btn-duo-yellow text-lg font-black flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>Pausar</span>
+          </button>
         )}
       </div>
 
-      {isPlaying && (
-        <div className="mt-4 flex justify-center">
-          <button
-            onClick={handleStop}
-            className="py-2.5 px-6 rounded-xl bg-white border border-stone-200 text-stone-600 hover:text-stone-900 text-xs font-semibold flex items-center gap-2 shadow-2xs"
-          >
-            <RotateCcw className="w-4 h-4" />
-            <span>Reiniciar Tabela</span>
-          </button>
-        </div>
+      {isFinished && onComplete && (
+        <button
+          onClick={() => onComplete(elapsedTime)}
+          className="w-full mt-4 py-4 px-6 btn-duo-green text-base font-black flex items-center justify-center gap-2 cursor-pointer animate-in fade-in"
+        >
+          <CheckCircle2 className="w-5 h-5 stroke-[2.5]" />
+          <span>Salvar Resultado ({elapsedTime.toFixed(1)}s)</span>
+        </button>
       )}
     </div>
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Target, Award, Clock, Flame, Brain, TrendingUp, CheckCircle2, RotateCcw, Shuffle } from 'lucide-react';
+import { Target, Award, Clock, Flame, Brain, Shuffle } from 'lucide-react';
 import { UserProfile, ExerciseResult } from '../../types';
 
 interface ProgressViewProps {
@@ -18,66 +18,66 @@ export const ProgressView: React.FC<ProgressViewProps> = ({ user, results, onRet
   const progressPercent = targetDiff > 0 ? Math.min(100, Math.max(0, Math.round((currentDiff / targetDiff) * 100))) : 0;
 
   return (
-    <div className="space-y-4 p-4 pb-24 max-w-lg mx-auto text-[#f3efe8]">
+    <div className="space-y-4 p-4 pb-24 max-w-lg mx-auto text-stone-800">
       {/* Header */}
       <div>
-        <h2 className="text-lg font-black text-[#faf8f5]">Evolução & Métricas</h2>
-        <p className="text-xs text-[#a39b8e]">Acompanhamento contínuo rumo à meta de +50%</p>
+        <h2 className="text-lg font-black text-stone-900">Evolução & Métricas</h2>
+        <p className="text-xs text-stone-500">Acompanhamento contínuo rumo à meta de +50%</p>
       </div>
 
       {/* Card da Meta de +50% */}
-      <div className="bg-gradient-to-br from-[#24211e] via-[#1c1917] to-[#1c1917] border border-[#3d3834] p-5 rounded-3xl shadow-xl">
+      <div className="bg-white border border-stone-200 p-5 rounded-3xl shadow-xs">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center">
               <Target className="w-4 h-4" />
             </div>
-            <span className="text-xs font-bold uppercase tracking-wider text-amber-300">
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">
               Desafio +50% de Velocidade
             </span>
           </div>
 
           <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded-full ${
             percentGain >= 50
-              ? 'bg-emerald-950/50 text-emerald-300 border border-emerald-600/40'
-              : 'bg-amber-500/15 text-amber-400 border border-amber-500/20'
+              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+              : 'bg-amber-50 text-amber-700 border border-amber-200'
           }`}>
             {percentGain >= 50 ? 'META CONQUISTADA! 🎉' : `${percentGain}% de ganho`}
           </span>
         </div>
 
         {/* Comparativo de Velocidades */}
-        <div className="grid grid-cols-3 gap-2 text-center my-4 bg-[#131211]/80 p-3 rounded-2xl border border-[#2c2724]">
+        <div className="grid grid-cols-3 gap-2 text-center my-4 bg-stone-50 p-3.5 rounded-2xl border border-stone-200/80">
           <div>
-            <span className="text-[10px] text-[#a39b8e] uppercase tracking-wider block font-medium">Inicial</span>
-            <span className="text-2xl font-black text-[#d8d0c2] font-mono">{user.baselineWpm}</span>
-            <span className="text-[9px] text-[#766f63] block">PPM</span>
+            <span className="text-[10px] text-stone-500 uppercase tracking-wider block font-semibold">Inicial</span>
+            <span className="text-2xl font-black text-stone-700 font-mono">{user.baselineWpm}</span>
+            <span className="text-[9px] text-stone-500 block">PPM</span>
           </div>
 
-          <div className="border-x border-[#2c2724]">
-            <span className="text-[10px] text-amber-400 uppercase tracking-wider block font-semibold">Atual</span>
-            <span className="text-2xl font-black text-[#faf8f5] font-mono">{user.currentWpm}</span>
-            <span className="text-[9px] text-amber-400 font-bold block">
+          <div className="border-x border-stone-200">
+            <span className="text-[10px] text-emerald-700 uppercase tracking-wider block font-bold">Atual</span>
+            <span className="text-2xl font-black text-stone-900 font-mono">{user.currentWpm}</span>
+            <span className="text-[9px] text-emerald-700 font-bold block">
               {percentGain > 0 ? `+${percentGain}%` : `${percentGain}%`}
             </span>
           </div>
 
           <div>
-            <span className="text-[10px] text-amber-300 uppercase tracking-wider block font-medium">Meta (+50%)</span>
-            <span className="text-2xl font-black text-amber-300 font-mono">{user.targetWpm}</span>
-            <span className="text-[9px] text-[#766f63] block">PPM</span>
+            <span className="text-[10px] text-amber-700 uppercase tracking-wider block font-semibold">Meta (+50%)</span>
+            <span className="text-2xl font-black text-amber-700 font-mono">{user.targetWpm}</span>
+            <span className="text-[9px] text-stone-500 block">PPM</span>
           </div>
         </div>
 
         {/* Barra de Progresso */}
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           <div className="flex justify-between text-xs font-medium">
-            <span className="text-[#a39b8e]">Progresso rumo aos {user.targetWpm} PPM:</span>
-            <span className="text-amber-300 font-mono font-bold">{progressPercent}%</span>
+            <span className="text-stone-500">Progresso rumo aos {user.targetWpm} PPM:</span>
+            <span className="text-emerald-700 font-mono font-bold">{progressPercent}%</span>
           </div>
-          <div className="w-full bg-[#131211] h-2.5 rounded-full overflow-hidden border border-[#2c2724]">
+          <div className="w-full bg-stone-100 h-2.5 rounded-full overflow-hidden border border-stone-200">
             <div
-              className="bg-gradient-to-r from-amber-600 via-amber-500 to-emerald-500 h-full rounded-full transition-all duration-300"
+              className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full transition-all duration-300"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -85,7 +85,7 @@ export const ProgressView: React.FC<ProgressViewProps> = ({ user, results, onRet
 
         <button
           onClick={onRetest}
-          className="w-full mt-4 py-3 px-4 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
+          className="w-full mt-4 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all"
         >
           <Shuffle className="w-4 h-4" />
           <span>Realizar Novo Teste de Aferição (+50%)</span>
@@ -94,77 +94,77 @@ export const ProgressView: React.FC<ProgressViewProps> = ({ user, results, onRet
 
       {/* Grid de Estatísticas Gerais */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-[#1c1917] border border-[#2c2724] p-4 rounded-2xl">
-          <div className="flex items-center gap-2 text-amber-400 mb-2">
+        <div className="bg-white border border-stone-200 p-4 rounded-2xl shadow-xs">
+          <div className="flex items-center gap-2 text-purple-700 mb-2">
             <Brain className="w-4 h-4" />
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#a39b8e]">Retenção Média</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Retenção Média</span>
           </div>
-          <span className="text-2xl font-black text-[#faf8f5] font-mono">{user.averageComprehension}%</span>
-          <span className="text-[10px] text-[#766f63] block mt-0.5">Compreensão de leitura</span>
+          <span className="text-2xl font-black text-stone-900 font-mono">{user.averageComprehension}%</span>
+          <span className="text-[10px] text-stone-500 block mt-0.5">Compreensão de leitura</span>
         </div>
 
-        <div className="bg-[#1c1917] border border-[#2c2724] p-4 rounded-2xl">
-          <div className="flex items-center gap-2 text-amber-400 mb-2">
-            <Flame className="w-4 h-4 fill-current" />
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#a39b8e]">Sequência</span>
+        <div className="bg-white border border-stone-200 p-4 rounded-2xl shadow-xs">
+          <div className="flex items-center gap-2 text-amber-600 mb-2">
+            <Flame className="w-4 h-4 fill-amber-500" />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Sequência</span>
           </div>
-          <span className="text-2xl font-black text-[#faf8f5] font-mono">{user.streakDays} dias</span>
-          <span className="text-[10px] text-[#766f63] block mt-0.5">Treinos consecutivos</span>
+          <span className="text-2xl font-black text-stone-900 font-mono">{user.streakDays} dias</span>
+          <span className="text-[10px] text-stone-500 block mt-0.5">Treinos consecutivos</span>
         </div>
 
-        <div className="bg-[#1c1917] border border-[#2c2724] p-4 rounded-2xl">
-          <div className="flex items-center gap-2 text-emerald-400 mb-2">
+        <div className="bg-white border border-stone-200 p-4 rounded-2xl shadow-xs">
+          <div className="flex items-center gap-2 text-emerald-700 mb-2">
             <Clock className="w-4 h-4" />
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#a39b8e]">Tempo Total</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Tempo Total</span>
           </div>
-          <span className="text-2xl font-black text-[#faf8f5] font-mono">{user.totalMinutesTrained} min</span>
-          <span className="text-[10px] text-[#766f63] block mt-0.5">Dedicados à técnica</span>
+          <span className="text-2xl font-black text-stone-900 font-mono">{user.totalMinutesTrained} min</span>
+          <span className="text-[10px] text-stone-500 block mt-0.5">Dedicados à técnica</span>
         </div>
 
-        <div className="bg-[#1c1917] border border-[#2c2724] p-4 rounded-2xl">
-          <div className="flex items-center gap-2 text-amber-300 mb-2">
+        <div className="bg-white border border-stone-200 p-4 rounded-2xl shadow-xs">
+          <div className="flex items-center gap-2 text-blue-700 mb-2">
             <Award className="w-4 h-4" />
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#a39b8e]">Melhor Marca</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Melhor Marca</span>
           </div>
-          <span className="text-2xl font-black text-[#faf8f5] font-mono">{user.bestWpm} PPM</span>
-          <span className="text-[10px] text-[#766f63] block mt-0.5">Recorde alcançado</span>
+          <span className="text-2xl font-black text-stone-900 font-mono">{user.bestWpm} PPM</span>
+          <span className="text-[10px] text-stone-500 block mt-0.5">Recorde alcançado</span>
         </div>
       </div>
 
       {/* Histórico Recente de Exercícios */}
-      <div className="bg-[#1c1917] border border-[#2c2724] rounded-3xl p-5 shadow-lg">
-        <h3 className="text-sm font-bold text-[#faf8f5] mb-3">Histórico de Sessões</h3>
+      <div className="bg-white border border-stone-200 rounded-3xl p-5 shadow-xs">
+        <h3 className="text-sm font-bold text-stone-900 mb-3">Histórico de Sessões</h3>
 
         {results.length === 0 ? (
-          <p className="text-xs text-[#766f63] text-center py-4">Nenhum treino registrado ainda.</p>
+          <p className="text-xs text-stone-400 text-center py-4">Nenhum treino registrado ainda.</p>
         ) : (
           <div className="space-y-2.5">
             {results.slice(0, 8).map((res) => (
               <div
                 key={res.id}
-                className="p-3 rounded-xl bg-[#131211]/80 border border-[#2c2724] flex items-center justify-between text-xs"
+                className="p-3 rounded-xl bg-stone-50 border border-stone-200/80 flex items-center justify-between text-xs"
               >
                 <div>
-                  <strong className="text-[#faf8f5] block">{res.title}</strong>
-                  <span className="text-[10px] text-[#766f63] font-mono">
+                  <strong className="text-stone-900 block">{res.title}</strong>
+                  <span className="text-[10px] text-stone-500 font-mono">
                     {new Date(res.date).toLocaleDateString('pt-BR')} às {new Date(res.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
 
                 <div className="text-right">
                   {res.wpm ? (
-                    <span className="text-sm font-bold text-amber-400 font-mono block">
+                    <span className="text-sm font-bold text-emerald-700 font-mono block">
                       {res.wpm} PPM
                     </span>
                   ) : res.score ? (
-                    <span className="text-sm font-bold text-amber-300 font-mono block">
+                    <span className="text-sm font-bold text-stone-700 font-mono block">
                       {res.score}s
                     </span>
                   ) : (
-                    <span className="text-xs font-medium text-emerald-400 block">Concluído</span>
+                    <span className="text-xs font-medium text-emerald-700 block">Concluído</span>
                   )}
                   {res.comprehensionScore !== undefined && (
-                    <span className="text-[10px] text-[#a39b8e]">
+                    <span className="text-[10px] text-stone-500">
                       {res.comprehensionScore}% retenção
                     </span>
                   )}

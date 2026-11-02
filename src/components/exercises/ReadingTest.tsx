@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, CheckCircle2, RotateCcw, ArrowLeft, Timer, Brain, Award, AlertCircle, ChevronRight, Shuffle } from 'lucide-react';
+import { Play, CheckCircle2, ArrowLeft, Timer, Brain, Award, ChevronRight, Shuffle } from 'lucide-react';
 import { ReadingText } from '../../types';
-import { INITIAL_DIAGNOSTIC_TEXT, PERIODIC_ASSESSMENT_TEXT, DIAGNOSTIC_TEXTS, getRandomAssessmentText } from '../../data/texts';
+import { getRandomAssessmentText } from '../../data/texts';
 import { audio } from '../../services/audioService';
 import confetti from 'canvas-confetti';
 
@@ -99,10 +99,10 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
     }
   };
 
-  const handleSelectOption = (optionIndex: number) => {
+  const handleSelectOption = (optIdx: number) => {
     if (!text.quiz) return;
     const currentQ = text.quiz[currentQuizIndex];
-    setAnswers(prev => ({ ...prev, [currentQ.id]: optionIndex }));
+    setAnswers(prev => ({ ...prev, [currentQ.id]: optIdx }));
   };
 
   const handleNextQuizQuestion = () => {
@@ -110,6 +110,7 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
     if (currentQuizIndex < text.quiz.length - 1) {
       setCurrentQuizIndex(prev => prev + 1);
     } else {
+      // Calcular score final
       let correct = 0;
       text.quiz.forEach(q => {
         if (answers[q.id] === q.correctIndex) {
@@ -117,19 +118,18 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
         }
       });
       const compPercent = Math.round((correct / text.quiz.length) * 100);
-      const readSeconds = readingDurationRef.current > 0 ? readingDurationRef.current : Math.max(3, elapsedSeconds);
-      const calculatedWpm = Math.min(1500, Math.max(50, Math.round((text.wordCount / readSeconds) * 60)));
-      finalizeResults(calculatedWpm, compPercent, readSeconds);
+      const calculatedWpm = Math.min(1500, Math.max(50, Math.round((text.wordCount / readingDurationRef.current) * 60)));
+      finalizeResults(calculatedWpm, compPercent, readingDurationRef.current);
     }
   };
 
-  const finalizeResults = (rawWpm: number, compPercent: number, totalSeconds: number) => {
-    const effectiveWpm = Math.round(rawWpm * (compPercent / 100));
+  const finalizeResults = (wpm: number, compPercent: number, finalSeconds: number) => {
+    const effectiveWpm = Math.round(wpm * (compPercent / 100));
     setScoreData({
-      wpm: rawWpm,
+      wpm,
       compPercent,
       effectiveWpm,
-      elapsedSeconds: totalSeconds
+      elapsedSeconds: finalSeconds
     });
     setPhase('result');
     audio.playSuccess();
@@ -140,17 +140,22 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
     });
   };
 
-  const targetWpm = baselineWpm > 0 ? Math.round(baselineWpm * 1.5) : Math.round((scoreData?.wpm || 200) * 1.5);
-  const percentGain = baselineWpm > 0 && scoreData ? Math.round(((scoreData.wpm - baselineWpm) / baselineWpm) * 100) : 0;
+  const targetWpm = isInitialTest && scoreData
+    ? Math.round(scoreData.wpm * 1.5)
+    : Math.round(baselineWpm * 1.5);
+
+  const percentGain = baselineWpm > 0 && scoreData
+    ? Math.round(((scoreData.wpm - baselineWpm) / baselineWpm) * 100)
+    : 0;
 
   return (
-    <div className="flex flex-col min-h-full max-w-lg mx-auto p-4 pb-24 text-[#f3efe8]">
-      {/* Top Bar */}
+    <div className="flex flex-col min-h-full max-w-lg mx-auto p-4 pb-24 text-stone-800">
+      {/* Top bar */}
       <div className="flex items-center justify-between mb-4">
         {onBack && phase === 'intro' ? (
           <button
             onClick={onBack}
-            className="flex items-center gap-1.5 text-sm text-[#a39b8e] hover:text-[#f3efe8] transition-colors py-1 px-2.5 rounded-lg bg-[#1c1917] border border-[#2c2724]"
+            className="flex items-center gap-1.5 text-sm text-stone-600 hover:text-stone-900 transition-colors py-1 px-2.5 rounded-lg bg-white border border-stone-200 shadow-2xs"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Voltar</span>
@@ -158,7 +163,7 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
         ) : <div />}
 
         {phase === 'reading' && (
-          <div className="flex items-center gap-2 bg-amber-500/15 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full text-xs font-mono font-bold animate-pulse">
+          <div className="flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full text-xs font-mono font-bold animate-pulse">
             <Timer className="w-3.5 h-3.5" />
             <span>{elapsedSeconds.toFixed(1)}s</span>
           </div>
@@ -168,25 +173,25 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
       {/* FASE 1: INTRODUÇÃO */}
       {phase === 'intro' && (
         <div className="space-y-4">
-          <div className="bg-gradient-to-br from-[#24211e] via-[#1c1917] to-[#1c1917] p-5 rounded-3xl border border-[#3d3834] shadow-xl">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-400 mb-3">
+          <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-xs">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 mb-3">
               <Award className="w-6 h-6" />
             </div>
-            <h2 className="text-xl font-black text-[#faf8f5] mb-1">
+            <h2 className="text-xl font-black text-stone-900 mb-1">
               {isInitialTest ? 'Teste Diagnóstico Inicial' : 'Teste de Aferição de Progresso'}
             </h2>
-            <p className="text-xs text-[#d8d0c2] leading-relaxed mb-4">
+            <p className="text-xs text-stone-600 leading-relaxed mb-4">
               {isInitialTest
                 ? 'Este teste medirá sua velocidade de leitura natural (PPM) e sua taxa de retenção. Ele definirá a sua meta personalizada de aumento de +50%!'
                 : 'Averigue o seu avanço após as sessões de treino e meça a sua aproximação da meta de +50% de velocidade.'}
             </p>
 
-            <div className="bg-[#131211]/80 p-3 rounded-xl border border-[#2c2724] space-y-2 text-xs text-[#d8d0c2]">
-              <div className="flex items-center gap-2 text-amber-300 font-semibold">
+            <div className="bg-stone-50 p-3.5 rounded-xl border border-stone-200/80 space-y-2 text-xs text-stone-700">
+              <div className="flex items-center gap-2 text-emerald-700 font-bold">
                 <Brain className="w-4 h-4" />
                 <span>Como funciona o teste:</span>
               </div>
-              <ul className="list-disc list-inside space-y-1 text-[#a39b8e]">
+              <ul className="list-disc list-inside space-y-1 text-stone-600">
                 <li>Leia o texto no seu ritmo natural de compreensão, sem forçar pressa artificial.</li>
                 <li>Ao terminar a última palavra, aperte o botão "Terminei de Ler".</li>
                 <li>Responda às perguntas para avaliar a absorção real do conteúdo.</li>
@@ -195,17 +200,17 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
           </div>
 
           {/* Card do Texto Selecionado com botão de Randomização */}
-          <div className="bg-[#1c1917] p-3.5 rounded-2xl border border-[#2c2724] flex items-center justify-between text-xs text-[#a39b8e]">
+          <div className="bg-white p-3.5 rounded-2xl border border-stone-200 flex items-center justify-between text-xs text-stone-600 shadow-xs">
             <div className="pr-2 flex-1">
-              <span className="block text-[#766f63] text-[11px] uppercase tracking-wider font-medium">Texto Selecionado</span>
-              <strong className="text-[#faf8f5] text-sm block leading-snug">{text.title}</strong>
-              <span className="text-[11px] text-amber-400 font-mono block mt-0.5">{text.wordCount} palavras • ~{text.estimatedMinutes} min</span>
+              <span className="block text-stone-400 text-[11px] uppercase tracking-wider font-semibold">Texto Selecionado</span>
+              <strong className="text-stone-900 text-sm block leading-snug">{text.title}</strong>
+              <span className="text-[11px] text-emerald-700 font-mono block mt-0.5">{text.wordCount} palavras • ~{text.estimatedMinutes} min</span>
             </div>
 
             <button
               onClick={handleShuffleText}
               title="Sortear outro texto para este teste"
-              className="py-1.5 px-2.5 rounded-xl bg-[#24211e] hover:bg-[#2c2724] border border-[#36322e] text-xs font-semibold text-amber-300 flex items-center gap-1.5 shrink-0 transition-colors"
+              className="py-1.5 px-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 border border-stone-200 text-xs font-semibold text-stone-700 flex items-center gap-1.5 shrink-0 transition-colors"
             >
               <Shuffle className="w-3.5 h-3.5" />
               <span>Sortear Outro</span>
@@ -214,7 +219,7 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
 
           <button
             onClick={handleStartReading}
-            className="w-full py-4 px-6 rounded-2xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-900/40 active:scale-98 transition-all"
+            className="w-full py-4 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xs active:scale-98 transition-all"
           >
             <Play className="w-5 h-5 fill-current" />
             <span>Começar a Ler Agora</span>
@@ -225,12 +230,12 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
       {/* FASE 2: LEITURA EM ANDAMENTO (Estilo Editorial Papel & Livro) */}
       {phase === 'reading' && (
         <div className="space-y-4">
-          <div className="bg-[#1c1917] border border-[#2c2724] rounded-3xl p-5 shadow-xl">
-            <h3 className="text-base font-bold text-[#faf8f5] mb-1">{text.title}</h3>
-            <span className="text-xs text-[#a39b8e] block mb-4 italic">Por {text.author}</span>
+          <div className="bg-[#FCFBF8] border border-stone-200 rounded-3xl p-5 shadow-xs">
+            <h3 className="text-base font-bold text-stone-900 mb-1">{text.title}</h3>
+            <span className="text-xs text-stone-500 block mb-4 italic">Por {text.author}</span>
 
             {/* Texto formatado com tipografia confortável editorial */}
-            <div className="text-[#f5f2eb] text-sm md:text-base leading-relaxed space-y-3 font-reading max-h-[52vh] overflow-y-auto pr-1 selection:bg-amber-500/30">
+            <div className="text-stone-800 text-sm md:text-base leading-relaxed space-y-3 font-reading max-h-[52vh] overflow-y-auto pr-1 selection:bg-emerald-500/20">
               {text.text.split('\n\n').map((paragraph, idx) => (
                 <p key={idx} className="indent-4">
                   {paragraph}
@@ -241,7 +246,7 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
 
           <button
             onClick={handleFinishReading}
-            className="w-full py-4 px-6 rounded-2xl bg-emerald-700 hover:bg-emerald-600 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/40 active:scale-98 transition-all"
+            className="w-full py-4 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm flex items-center justify-center gap-2 shadow-xs active:scale-98 transition-all"
           >
             <CheckCircle2 className="w-5 h-5" />
             <span>Terminei de Ler! ({elapsedSeconds.toFixed(1)}s)</span>
@@ -252,11 +257,11 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
       {/* FASE 3: QUESTIONÁRIO DE COMPREENSÃO */}
       {phase === 'quiz' && text.quiz && (
         <div className="space-y-4">
-          <div className="bg-[#1c1917] border border-[#2c2724] p-4 rounded-2xl flex items-center justify-between">
-            <span className="text-xs text-[#a39b8e] font-medium">
+          <div className="bg-white border border-stone-200 p-4 rounded-2xl flex items-center justify-between shadow-xs">
+            <span className="text-xs text-stone-500 font-medium">
               Pergunta {currentQuizIndex + 1} de {text.quiz.length}
             </span>
-            <span className="text-xs bg-amber-500/15 text-amber-300 border border-amber-500/20 px-2 py-0.5 rounded-full font-bold">
+            <span className="text-xs bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full font-bold">
               Retenção e Compreensão
             </span>
           </div>
@@ -266,8 +271,8 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
             const selectedOpt = answers[currentQ.id];
 
             return (
-              <div className="bg-[#1c1917] border border-[#2c2724] p-5 rounded-3xl shadow-xl space-y-4">
-                <h3 className="text-sm md:text-base font-bold text-[#faf8f5] leading-snug">
+              <div className="bg-white border border-stone-200 p-5 rounded-3xl shadow-xs space-y-4">
+                <h3 className="text-sm md:text-base font-bold text-stone-900 leading-snug">
                   {currentQ.question}
                 </h3>
 
@@ -280,12 +285,12 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
                         onClick={() => handleSelectOption(optIdx)}
                         className={`w-full p-3.5 rounded-xl text-left text-xs md:text-sm font-medium transition-all flex items-start gap-2.5 ${
                           isSelected
-                            ? 'bg-amber-700 text-white shadow-md ring-2 ring-amber-400'
-                            : 'bg-[#131211] text-[#d8d0c2] hover:bg-[#24211e] border border-[#2c2724]'
+                            ? 'bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-400'
+                            : 'bg-stone-50 text-stone-700 hover:bg-stone-100 border border-stone-200'
                         }`}
                       >
                         <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 ${
-                          isSelected ? 'bg-white text-amber-800' : 'bg-[#24211e] text-[#a39b8e]'
+                          isSelected ? 'bg-white text-emerald-800' : 'bg-stone-200 text-stone-600'
                         }`}>
                           {String.fromCharCode(65 + optIdx)}
                         </span>
@@ -298,7 +303,7 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
                 <button
                   disabled={selectedOpt === undefined}
                   onClick={handleNextQuizQuestion}
-                  className="w-full py-3.5 px-6 rounded-xl bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs flex items-center justify-center gap-2 transition-all mt-3"
+                  className="w-full py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs flex items-center justify-center gap-2 transition-all mt-3"
                 >
                   <span>{currentQuizIndex < text.quiz.length - 1 ? 'Próxima Pergunta' : 'Finalizar Teste'}</span>
                   <ChevronRight className="w-4 h-4" />
@@ -312,51 +317,51 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
       {/* FASE 4: RESULTADO DETALHADO */}
       {phase === 'result' && scoreData && (
         <div className="space-y-4">
-          <div className="bg-gradient-to-br from-[#24211e] via-[#1c1917] to-[#1c1917] p-6 rounded-3xl border border-[#3d3834] text-center shadow-xl">
-            <div className="w-16 h-16 rounded-full bg-emerald-950/40 border border-emerald-600/40 flex items-center justify-center text-emerald-400 mx-auto mb-3 shadow-md">
+          <div className="bg-white p-6 rounded-3xl border border-stone-200 text-center shadow-xs">
+            <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 mx-auto mb-3">
               <Award className="w-8 h-8" />
             </div>
 
-            <span className="text-xs uppercase tracking-widest text-amber-400 font-bold block mb-1">
+            <span className="text-xs uppercase tracking-widest text-emerald-700 font-bold block mb-1">
               {isInitialTest ? 'Linha de Base Estabelecida' : 'Resultado do Teste'}
             </span>
-            <h2 className="text-2xl font-black text-[#faf8f5] mb-2">
-              {scoreData.wpm} <span className="text-base text-[#a39b8e] font-normal">PPM</span>
+            <h2 className="text-2xl font-black text-stone-900 mb-2">
+              {scoreData.wpm} <span className="text-base text-stone-500 font-normal">PPM</span>
             </h2>
-            <p className="text-xs text-[#d8d0c2] max-w-xs mx-auto mb-5">
+            <p className="text-xs text-stone-600 max-w-xs mx-auto mb-5">
               Você leu {text.wordCount} palavras em {scoreData.elapsedSeconds.toFixed(1)} segundos com {scoreData.compPercent}% de retenção.
             </p>
 
             {/* Grid de Métricas */}
             <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className="bg-[#131211]/80 p-3 rounded-2xl border border-[#2c2724]">
-                <span className="text-[10px] text-[#a39b8e] uppercase tracking-wider block font-medium">Compreensão</span>
+              <div className="bg-stone-50 p-3 rounded-2xl border border-stone-200/80">
+                <span className="text-[10px] text-stone-500 uppercase tracking-wider block font-semibold">Compreensão</span>
                 <span className={`text-xl font-black font-mono ${
-                  scoreData.compPercent >= 75 ? 'text-emerald-400' : 'text-amber-400'
+                  scoreData.compPercent >= 75 ? 'text-emerald-700' : 'text-amber-700'
                 }`}>
                   {scoreData.compPercent}%
                 </span>
               </div>
 
-              <div className="bg-[#131211]/80 p-3 rounded-2xl border border-[#2c2724]">
-                <span className="text-[10px] text-[#a39b8e] uppercase tracking-wider block font-medium">PPM Eficaz</span>
-                <span className="text-xl font-black font-mono text-amber-400">
+              <div className="bg-stone-50 p-3 rounded-2xl border border-stone-200/80">
+                <span className="text-[10px] text-stone-500 uppercase tracking-wider block font-semibold">PPM Eficaz</span>
+                <span className="text-xl font-black font-mono text-emerald-700">
                   {scoreData.effectiveWpm}
                 </span>
               </div>
             </div>
 
             {/* Meta de +50% */}
-            <div className="bg-[#131211]/90 border border-amber-600/25 p-3.5 rounded-2xl text-left space-y-2">
+            <div className="bg-stone-50 border border-stone-200 p-3.5 rounded-2xl text-left space-y-2">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-[#d8d0c2] font-medium">Meta de Aumento (+50%):</span>
-                <strong className="text-amber-400 font-mono text-sm">{targetWpm} PPM</strong>
+                <span className="text-stone-700 font-medium">Meta de Aumento (+50%):</span>
+                <strong className="text-emerald-700 font-mono text-sm">{targetWpm} PPM</strong>
               </div>
 
               {baselineWpm > 0 && !isInitialTest && (
-                <div className="flex items-center justify-between text-xs pt-1 border-t border-[#2c2724]">
-                  <span className="text-[#a39b8e]">Evolução desde o início:</span>
-                  <span className={`font-bold font-mono ${percentGain >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                <div className="flex items-center justify-between text-xs pt-1 border-t border-stone-200">
+                  <span className="text-stone-500">Evolução desde o início:</span>
+                  <span className={`font-bold font-mono ${percentGain >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
                     {percentGain > 0 ? `+${percentGain}%` : `${percentGain}%`}
                   </span>
                 </div>
@@ -366,8 +371,8 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
 
           {/* Gabarito e Revisão de Retenção */}
           {text.quiz && text.quiz.length > 0 && (
-            <div className="bg-[#1c1917] border border-[#2c2724] p-4 rounded-3xl text-left space-y-3">
-              <span className="text-[11px] uppercase tracking-wider text-amber-400 font-bold block">
+            <div className="bg-white border border-stone-200 p-4 rounded-3xl text-left space-y-3 shadow-xs">
+              <span className="text-[11px] uppercase tracking-wider text-emerald-800 font-bold block">
                 Gabarito Comentado & Justificativas
               </span>
               <div className="space-y-2.5">
@@ -376,24 +381,24 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
                   const isCorrect = userAns === q.correctIndex;
 
                   return (
-                    <div key={q.id} className="p-3 rounded-xl bg-[#131211]/80 border border-[#2c2724] text-xs space-y-1.5">
-                      <div className="flex items-start gap-2 font-semibold text-[#f3efe8]">
+                    <div key={q.id} className="p-3 rounded-xl bg-stone-50 border border-stone-200/80 text-xs space-y-1.5">
+                      <div className="flex items-start gap-2 font-semibold text-stone-800">
                         <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold shrink-0 mt-0.5 ${
-                          isCorrect ? 'bg-emerald-950/40 text-emerald-400 border border-emerald-600/30' : 'bg-rose-950/40 text-rose-300 border border-rose-600/30'
+                          isCorrect ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
                         }`}>
                           {isCorrect ? '✓ Correto' : '✗ Incorreto'}
                         </span>
                         <span>{idx + 1}. {q.question}</span>
                       </div>
                       {!isCorrect && userAns !== undefined && (
-                        <p className="text-[11px] text-rose-300 pl-2">
+                        <p className="text-[11px] text-rose-600 pl-2">
                           Sua escolha: <span className="line-through">{q.options[userAns]}</span>
                         </p>
                       )}
-                      <p className="text-[11px] text-emerald-400 pl-2 font-medium">
+                      <p className="text-[11px] text-emerald-700 pl-2 font-medium">
                         Resposta certa: {q.options[q.correctIndex]}
                       </p>
-                      <p className="text-[11px] text-[#a39b8e] italic pl-2 border-l-2 border-amber-600/40 mt-1">
+                      <p className="text-[11px] text-stone-500 italic pl-2 border-l-2 border-emerald-500/40 mt-1">
                         {q.explanation}
                       </p>
                     </div>
@@ -414,7 +419,7 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
                 textId: text.id
               });
             }}
-            className="w-full py-4 px-6 rounded-2xl bg-emerald-700 hover:bg-emerald-600 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/40 active:scale-98 transition-all"
+            className="w-full py-4 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm flex items-center justify-center gap-2 shadow-xs active:scale-98 transition-all"
           >
             <CheckCircle2 className="w-5 h-5" />
             <span>Salvar e Concluir Teste</span>

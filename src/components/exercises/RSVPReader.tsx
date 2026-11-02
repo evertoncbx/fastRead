@@ -113,8 +113,9 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
   };
 
   const handlePlay = () => {
+    if (words.length === 0) return;
     let startIdx = currentIndex;
-    if (startIdx >= words.length - 1) {
+    if (isFinished || startIdx >= words.length - 1) {
       startIdx = 0;
       setCurrentIndex(0);
     }
@@ -163,13 +164,13 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
   const progressPercentage = Math.round(((currentIndex + 1) / words.length) * 100) || 0;
 
   return (
-    <div className="flex flex-col min-h-full max-w-lg mx-auto p-4 pb-24 text-[#f3efe8]">
+    <div className="flex flex-col min-h-full max-w-lg mx-auto p-4 pb-24 text-stone-800">
       {/* Top bar */}
       <div className="flex items-center justify-between mb-4">
         {onBack ? (
           <button
             onClick={onBack}
-            className="flex items-center gap-1.5 text-sm text-[#a39b8e] hover:text-[#f3efe8] transition-colors py-1 px-2.5 rounded-lg bg-[#1c1917] border border-[#2c2724]"
+            className="flex items-center gap-1.5 text-sm text-stone-600 hover:text-stone-900 transition-colors py-1 px-2.5 rounded-lg bg-white border border-stone-200 shadow-2xs"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Voltar</span>
@@ -180,41 +181,41 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
           <button
             onClick={toggleSound}
             aria-label="Alternar som"
-            className="p-2 rounded-lg bg-[#1c1917] border border-[#2c2724] text-[#a39b8e] hover:text-[#f3efe8] transition-colors"
+            className="p-2 rounded-lg bg-white border border-stone-200 text-stone-600 hover:text-stone-900 shadow-2xs transition-colors"
           >
-            {soundOn ? <Volume2 className="w-4 h-4 text-amber-400" /> : <VolumeX className="w-4 h-4 text-[#766f63]" />}
+            {soundOn ? <Volume2 className="w-4 h-4 text-emerald-600" /> : <VolumeX className="w-4 h-4 text-stone-400" />}
           </button>
         </div>
       </div>
 
       {/* Header Info */}
-      <div className="bg-gradient-to-br from-[#24211e] via-[#1c1917] to-[#1c1917] p-4 rounded-2xl border border-[#3d3834] mb-4 shadow-md">
+      <div className="bg-white p-4 rounded-2xl border border-stone-200 mb-4 shadow-xs">
         <div className="flex items-center gap-2.5 mb-1.5">
-          <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+          <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700">
             <Zap className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-[#faf8f5] flex items-center gap-2">
+            <h2 className="text-lg font-bold text-stone-900 flex items-center gap-2">
               Leitor RSVP com Ponto Focal (ORP)
-              {isDailyStep && <span className="text-xs bg-amber-500/15 text-amber-300 border border-amber-500/25 px-2 py-0.5 rounded-full font-medium">Jornada</span>}
+              {isDailyStep && <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full font-medium">Jornada</span>}
             </h2>
-            <p className="text-xs text-[#a39b8e]">Elimina movimentos sacádicos e acelera a captação visual</p>
+            <p className="text-xs text-stone-500">Elimina movimentos sacádicos e acelera a captação visual</p>
           </div>
         </div>
 
         {/* Dica da técnica */}
-        <div className="mt-3 bg-[#131211]/80 p-2.5 rounded-xl border border-[#2c2724] text-xs text-[#d8d0c2] flex items-start gap-2">
-          <Zap className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+        <div className="mt-3 bg-blue-50/80 p-2.5 rounded-xl border border-blue-200 text-xs text-blue-900 flex items-start gap-2">
+          <Zap className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
           <span>
-            <strong className="text-[#faf8f5]">Como Funciona:</strong> Fixe o olhar na <span className="text-amber-400 font-bold">letra destacada em âmbar</span> entre as guias verticais. Seus olhos não precisam se mover — o cérebro processa o conceito instantaneamente.
+            <strong className="text-blue-950">Como Funciona:</strong> Fixe o olhar na <span className="text-rose-600 font-bold">letra destacada em vermelho</span> entre as guias. Seus olhos não precisam se mover — o cérebro processa o conceito instantaneamente.
           </span>
         </div>
       </div>
 
       {/* Seletor de Textos */}
-      <div className="mb-3 bg-[#1c1917] border border-[#2c2724] p-2.5 rounded-xl">
-        <label className="text-[11px] uppercase tracking-wider text-[#a39b8e] font-medium block mb-1.5 flex items-center gap-1.5">
-          <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+      <div className="mb-3 bg-white border border-stone-200 p-2.5 rounded-xl shadow-xs">
+        <label className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold block mb-1.5 flex items-center gap-1.5">
+          <BookOpen className="w-3.5 h-3.5 text-emerald-600" />
           Obra em Domínio Público:
         </label>
         <select
@@ -224,7 +225,7 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
             setSelectedTextIndex(Number(e.target.value));
             handleReset();
           }}
-          className="w-full bg-[#131211] border border-[#2c2724] rounded-lg py-1.5 px-3 text-xs text-[#f3efe8] font-medium focus:outline-none focus:border-amber-500"
+          className="w-full bg-stone-50 border border-stone-200 rounded-lg py-1.5 px-3 text-xs text-stone-800 font-medium focus:bg-white focus:outline-none focus:border-emerald-500"
         >
           {availableTexts.map((item, idx) => (
             <option key={item.id} value={idx}>
@@ -235,47 +236,47 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
       </div>
 
       {/* Visor RSVP (Optimal Recognition Point / ORP Visualizer) */}
-      <div className="relative bg-[#1c1917] border-2 border-[#2c2724] rounded-3xl p-8 mb-4 shadow-xl flex flex-col items-center justify-center min-h-[190px] overflow-hidden">
+      <div className="relative bg-white border-2 border-stone-200 rounded-3xl p-8 mb-4 shadow-xs flex flex-col items-center justify-center min-h-[190px] overflow-hidden">
         {/* Guias verticais de alinhamento óptico */}
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-0.5 h-4 bg-amber-500/80 rounded-full" />
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-0.5 h-4 bg-amber-500/80 rounded-full" />
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-0.5 h-4 bg-rose-500 rounded-full" />
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-0.5 h-4 bg-rose-500 rounded-full" />
 
         {/* Linha guia foveal sutil */}
-        <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 h-[1px] bg-[#2c2724]/60 pointer-events-none" />
+        <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 h-[1px] bg-stone-200 pointer-events-none" />
 
         {/* Container da Palavra com Alinhamento Estrito no ORP */}
         <div className="relative z-10 flex items-center justify-center w-full font-mono text-3xl sm:text-4xl select-none">
-          <div className="w-1/2 text-right text-[#f5f2eb] font-medium tracking-normal pr-[2px]">
+          <div className="w-1/2 text-right text-stone-900 font-medium tracking-normal pr-[2px]">
             {currentWordParts.prefix}
           </div>
 
-          <div className="text-amber-400 font-black scale-110 px-[2px] bg-amber-500/15 rounded-md">
+          <div className="text-rose-600 font-black scale-110 px-[2px] bg-rose-50 rounded-md">
             {currentWordParts.orp}
           </div>
 
-          <div className="w-1/2 text-left text-[#f5f2eb] font-medium tracking-normal pl-[2px]">
+          <div className="w-1/2 text-left text-stone-900 font-medium tracking-normal pl-[2px]">
             {currentWordParts.suffix}
           </div>
         </div>
 
         {/* Progresso de Palavras */}
-        <div className="absolute bottom-2.5 left-4 right-4 flex items-center justify-between text-[11px] font-mono text-[#766f63]">
+        <div className="absolute bottom-2.5 left-4 right-4 flex items-center justify-between text-[11px] font-mono text-stone-400">
           <span>{currentIndex + 1} de {words.length} pal.</span>
           <span>{progressPercentage}%</span>
         </div>
 
         {/* Overlay se concluído */}
         {isFinished && (
-          <div className="absolute inset-0 bg-[#131211]/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center z-20">
-            <div className="w-12 h-12 rounded-full bg-emerald-950/40 border border-emerald-600/40 flex items-center justify-center text-emerald-400 mb-2">
+          <div className="absolute inset-0 bg-white/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center z-20">
+            <div className="w-12 h-12 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 mb-2">
               <CheckCircle2 className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-bold text-[#faf8f5] mb-1">Leitura RSVP Concluída!</h3>
-            <p className="text-xs text-[#a39b8e] mb-3">Velocidade mantida: {wpm} PPM.</p>
+            <h3 className="text-base font-bold text-stone-900 mb-1">Leitura RSVP Concluída!</h3>
+            <p className="text-xs text-stone-500 mb-3">Velocidade mantida: {wpm} PPM.</p>
             {onComplete && (
               <button
                 onClick={() => onComplete(wpm, Math.max(1, Math.round(words.length / wpm)))}
-                className="py-2.5 px-6 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs flex items-center gap-2 shadow-md transition-all"
+                className="py-2.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 shadow-xs transition-all"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Continuar Jornada</span>
@@ -286,19 +287,19 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
       </div>
 
       {/* Barra de Progresso Interativa */}
-      <div className="w-full bg-[#1c1917] h-2 rounded-full overflow-hidden mb-4 border border-[#2c2724]">
+      <div className="w-full bg-stone-100 h-2 rounded-full overflow-hidden mb-4 border border-stone-200">
         <div
-          className="bg-gradient-to-r from-amber-600 to-amber-400 h-full transition-all duration-150"
+          className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full transition-all duration-150"
           style={{ width: `${progressPercentage}%` }}
         />
       </div>
 
       {/* Controles de Velocidade (PPM) */}
-      <div className="bg-[#1c1917] border border-[#2c2724] p-3 rounded-2xl mb-4">
+      <div className="bg-white border border-stone-200 p-3.5 rounded-2xl mb-4 shadow-xs">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs text-[#a39b8e] font-medium">Velocidade de Exibição</span>
-          <span className="text-xl font-black text-amber-400 font-mono">
-            {wpm} <span className="text-xs font-semibold text-[#a39b8e]">PPM</span>
+          <span className="text-xs text-stone-600 font-medium">Velocidade de Exibição</span>
+          <span className="text-xl font-black text-emerald-700 font-mono">
+            {wpm} <span className="text-xs font-semibold text-stone-400">PPM</span>
           </span>
         </div>
 
@@ -309,10 +310,10 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
           step="25"
           value={wpm}
           onChange={(e) => setWpm(Number(e.target.value))}
-          className="w-full accent-amber-500 bg-[#24211e] h-2 rounded-lg cursor-pointer"
+          className="w-full accent-emerald-600 bg-stone-100 h-2 rounded-lg cursor-pointer"
         />
 
-        <div className="flex justify-between text-[10px] text-[#766f63] font-mono mt-1">
+        <div className="flex justify-between text-[10px] text-stone-400 font-mono mt-1">
           <span>200 PPM (Médio)</span>
           <span>450 PPM (Avançado)</span>
           <span>800 PPM (Turbo)</span>
@@ -324,17 +325,17 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
         <button
           onClick={() => handleJump(-10)}
           aria-label="Voltar 10 palavras"
-          className="p-3.5 rounded-xl bg-[#1c1917] border border-[#2c2724] text-[#a39b8e] hover:text-[#f3efe8] transition-colors"
+          className="p-3.5 rounded-xl bg-white border border-stone-200 text-stone-600 hover:text-stone-900 shadow-2xs transition-colors"
         >
           <Rewind className="w-5 h-5" />
         </button>
 
         <button
           onClick={isPlaying ? handlePause : handlePlay}
-          className={`flex-1 py-4 px-6 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-md transition-all ${
+          className={`flex-1 py-4 px-6 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-xs transition-all ${
             isPlaying
-              ? 'bg-[#2c2724] hover:bg-[#36322e] text-[#f3efe8]'
-              : 'bg-amber-600 hover:bg-amber-500 text-white shadow-amber-900/30'
+              ? 'bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-200'
+              : 'bg-emerald-600 hover:bg-emerald-700 text-white'
           }`}
         >
           {isPlaying ? (
@@ -353,7 +354,7 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
         <button
           onClick={() => handleJump(10)}
           aria-label="Avançar 10 palavras"
-          className="p-3.5 rounded-xl bg-[#1c1917] border border-[#2c2724] text-[#a39b8e] hover:text-[#f3efe8] transition-colors"
+          className="p-3.5 rounded-xl bg-white border border-stone-200 text-stone-600 hover:text-stone-900 shadow-2xs transition-colors"
         >
           <FastForward className="w-5 h-5" />
         </button>
@@ -361,7 +362,7 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
         <button
           onClick={handleReset}
           aria-label="Reiniciar leitura"
-          className="p-3.5 rounded-xl bg-[#1c1917] border border-[#2c2724] text-[#a39b8e] hover:text-[#f3efe8] transition-colors"
+          className="p-3.5 rounded-xl bg-white border border-stone-200 text-stone-600 hover:text-stone-900 shadow-2xs transition-colors"
         >
           <RotateCcw className="w-5 h-5" />
         </button>

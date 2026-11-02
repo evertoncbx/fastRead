@@ -97,13 +97,13 @@ export const SchulteTable: React.FC<SchulteTableProps> = ({ onComplete, onBack, 
   };
 
   return (
-    <div className="flex flex-col min-h-full max-w-lg mx-auto p-4 pb-24 text-[#f3efe8]">
+    <div className="flex flex-col min-h-full max-w-lg mx-auto p-4 pb-24 text-stone-800">
       {/* Top bar */}
       <div className="flex items-center justify-between mb-4">
         {onBack ? (
           <button
             onClick={onBack}
-            className="flex items-center gap-1.5 text-sm text-[#a39b8e] hover:text-[#f3efe8] transition-colors py-1 px-2.5 rounded-lg bg-[#1c1917] border border-[#2c2724]"
+            className="flex items-center gap-1.5 text-sm text-stone-600 hover:text-stone-900 transition-colors py-1 px-2.5 rounded-lg bg-white border border-stone-200 shadow-2xs"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Voltar</span>
@@ -114,59 +114,59 @@ export const SchulteTable: React.FC<SchulteTableProps> = ({ onComplete, onBack, 
           <button
             onClick={toggleSound}
             aria-label="Alternar som"
-            className="p-2 rounded-lg bg-[#1c1917] border border-[#2c2724] text-[#a39b8e] hover:text-[#f3efe8] transition-colors"
+            className="p-2 rounded-lg bg-white border border-stone-200 text-stone-600 hover:text-stone-900 shadow-2xs transition-colors"
           >
-            {soundOn ? <Volume2 className="w-4 h-4 text-amber-400" /> : <VolumeX className="w-4 h-4 text-[#766f63]" />}
+            {soundOn ? <Volume2 className="w-4 h-4 text-emerald-600" /> : <VolumeX className="w-4 h-4 text-stone-400" />}
           </button>
         </div>
       </div>
 
       {/* Header Info */}
-      <div className="bg-gradient-to-br from-[#24211e] via-[#1c1917] to-[#1c1917] p-4 rounded-2xl border border-[#3d3834] mb-4 shadow-md">
+      <div className="bg-white p-4 rounded-2xl border border-stone-200 mb-4 shadow-xs">
         <div className="flex items-center gap-2.5 mb-1.5">
-          <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+          <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700">
             <Eye className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-[#faf8f5] flex items-center gap-2">
+            <h2 className="text-lg font-bold text-stone-900 flex items-center gap-2">
               Tabela de Schulte
-              {isDailyStep && <span className="text-xs bg-amber-500/15 text-amber-300 border border-amber-500/25 px-2 py-0.5 rounded-full font-medium">Jornada</span>}
+              {isDailyStep && <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-medium">Jornada</span>}
             </h2>
-            <p className="text-xs text-[#a39b8e]">Expansão de visão periférica e percepção parafoveal</p>
+            <p className="text-xs text-stone-500">Expansão de visão periférica e percepção parafoveal</p>
           </div>
         </div>
 
         {/* Dica Científica */}
-        <div className="mt-3 bg-[#131211]/80 p-2.5 rounded-xl border border-[#2c2724] text-xs text-[#d8d0c2] flex items-start gap-2">
-          <Zap className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+        <div className="mt-3 bg-amber-50/80 p-2.5 rounded-xl border border-amber-200 text-xs text-amber-800 flex items-start gap-2">
+          <Zap className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <span>
-            <strong className="text-[#faf8f5]">Instrução:</strong> Mantenha o olhar fixo no <span className="text-amber-400 font-semibold">ponto central</span>. Use a visão periférica para encontrar os números de 1 até {totalNumbers} sem desviar o foco.
+            <strong className="text-amber-900">Instrução:</strong> Mantenha o olhar fixo no <span className="text-amber-800 font-bold">ponto central</span>. Use a visão periférica para encontrar os números de 1 até {totalNumbers} sem desviar o foco.
           </span>
         </div>
       </div>
 
       {/* Status Bar */}
       <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="bg-[#1c1917] border border-[#2c2724] p-3 rounded-xl flex items-center justify-between">
+        <div className="bg-white border border-stone-200 p-3 rounded-xl flex items-center justify-between shadow-xs">
           <div>
-            <span className="text-[11px] uppercase tracking-wider text-[#a39b8e] block font-medium">Próximo Alvo</span>
-            <span className="text-2xl font-black text-amber-400 font-mono">
+            <span className="text-[11px] uppercase tracking-wider text-stone-500 block font-semibold">Próximo Alvo</span>
+            <span className="text-2xl font-black text-emerald-700 font-mono">
               {isFinished ? '✓ CONCLUÍDO' : `${currentExpected} / ${totalNumbers}`}
             </span>
           </div>
-          <div className="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center font-black text-amber-300 text-lg">
+          <div className="w-10 h-10 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center font-black text-emerald-700 text-lg">
             {currentExpected <= totalNumbers ? currentExpected : '★'}
           </div>
         </div>
 
-        <div className="bg-[#1c1917] border border-[#2c2724] p-3 rounded-xl flex items-center justify-between">
+        <div className="bg-white border border-stone-200 p-3 rounded-xl flex items-center justify-between shadow-xs">
           <div>
-            <span className="text-[11px] uppercase tracking-wider text-[#a39b8e] block font-medium">Tempo Decorrido</span>
-            <span className="text-2xl font-black text-amber-300 font-mono">
+            <span className="text-[11px] uppercase tracking-wider text-stone-500 block font-semibold">Tempo Decorrido</span>
+            <span className="text-2xl font-black text-stone-900 font-mono">
               {elapsedTime.toFixed(1)}s
             </span>
           </div>
-          <div className="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+          <div className="w-10 h-10 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-600">
             <RotateCcw className="w-4 h-4" />
           </div>
         </div>
@@ -174,16 +174,16 @@ export const SchulteTable: React.FC<SchulteTableProps> = ({ onComplete, onBack, 
 
       {/* Dimensão da Tabela */}
       {!isPlaying && (
-        <div className="flex items-center justify-center gap-2 mb-4 bg-[#1c1917] p-1.5 rounded-xl border border-[#2c2724]">
-          <span className="text-xs text-[#a39b8e] font-medium px-2">Dimensão:</span>
+        <div className="flex items-center justify-center gap-2 mb-4 bg-white p-1.5 rounded-xl border border-stone-200 shadow-2xs">
+          <span className="text-xs text-stone-500 font-medium px-2">Dimensão:</span>
           {[3, 4, 5].map((size) => (
             <button
               key={size}
               onClick={() => setGridSize(size)}
               className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
                 gridSize === size
-                  ? 'bg-amber-600 text-white shadow-sm'
-                  : 'text-[#a39b8e] hover:text-[#f3efe8] hover:bg-[#24211e]'
+                  ? 'bg-emerald-600 text-white shadow-2xs'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
               }`}
             >
               {size}x{size} {size === 5 ? '(Padrão)' : ''}
@@ -193,11 +193,11 @@ export const SchulteTable: React.FC<SchulteTableProps> = ({ onComplete, onBack, 
       )}
 
       {/* O Grid da Tabela de Schulte */}
-      <div className="relative aspect-square w-full max-w-[360px] mx-auto bg-[#1c1917] p-3 rounded-2xl border-2 border-[#2c2724] shadow-xl flex items-center justify-center">
+      <div className="relative aspect-square w-full max-w-[360px] mx-auto bg-stone-100/70 p-3 rounded-2xl border-2 border-stone-200 shadow-xs flex items-center justify-center">
         {/* Ponto Central de Fixação Parafoveal */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10">
-          <div className="w-3.5 h-3.5 rounded-full bg-amber-500/30 border border-amber-400 flex items-center justify-center shadow-md">
-            <div className="w-1.5 h-1.5 rounded-full bg-amber-300 animate-ping opacity-75" />
+          <div className="w-3.5 h-3.5 rounded-full bg-emerald-500/20 border border-emerald-600 flex items-center justify-center shadow-xs">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-ping opacity-75" />
           </div>
         </div>
 
@@ -221,12 +221,12 @@ export const SchulteTable: React.FC<SchulteTableProps> = ({ onComplete, onBack, 
                   gridSize === 3 ? 'text-2xl' : gridSize === 4 ? 'text-xl' : 'text-base'
                 } ${
                   isCompleted
-                    ? 'bg-[#131211]/40 text-[#585147] border border-[#1c1917] opacity-40'
+                    ? 'bg-stone-100 text-stone-300 border border-stone-200'
                     : isError
-                    ? 'bg-rose-700 text-white scale-95'
+                    ? 'bg-rose-600 text-white scale-95'
                     : isPlaying
-                    ? 'bg-[#24211e] text-[#f3efe8] hover:bg-amber-600 hover:text-white border border-[#36322e] active:scale-95 shadow-sm'
-                    : 'bg-[#24211e]/70 text-[#a39b8e] border border-[#2c2724]'
+                    ? 'bg-white text-stone-900 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-400 border border-stone-200 active:scale-95 shadow-2xs'
+                    : 'bg-white/80 text-stone-400 border border-stone-200'
                 }`}
               >
                 {num}
@@ -237,17 +237,17 @@ export const SchulteTable: React.FC<SchulteTableProps> = ({ onComplete, onBack, 
 
         {/* Overlay quando parado */}
         {!isPlaying && !isFinished && (
-          <div className="absolute inset-0 bg-[#131211]/85 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center p-6 text-center z-20">
-            <div className="w-14 h-14 rounded-2xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-400 mb-3 shadow-md">
+          <div className="absolute inset-0 bg-white/95 backdrop-blur-xs rounded-2xl flex flex-col items-center justify-center p-6 text-center z-20">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 mb-3 shadow-xs">
               <Eye className="w-7 h-7" />
             </div>
-            <h3 className="text-base font-bold text-[#faf8f5] mb-1">Pronto para treinar a visão?</h3>
-            <p className="text-xs text-[#d8d0c2] max-w-xs mb-5">
+            <h3 className="text-base font-bold text-stone-900 mb-1">Pronto para treinar a visão?</h3>
+            <p className="text-xs text-stone-500 max-w-xs mb-5">
               Foque no ponto central da tabela. Localize os números em ordem crescente (1 a {totalNumbers}).
             </p>
             <button
               onClick={handleStart}
-              className="w-full max-w-xs py-3.5 px-6 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-amber-900/30 active:scale-98 transition-all"
+              className="w-full max-w-xs py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xs active:scale-98 transition-all"
             >
               <Play className="w-5 h-5 fill-current" />
               <span>Iniciar Tabela ({gridSize}x{gridSize})</span>
@@ -257,22 +257,22 @@ export const SchulteTable: React.FC<SchulteTableProps> = ({ onComplete, onBack, 
 
         {/* Overlay quando vitorioso */}
         {isFinished && (
-          <div className="absolute inset-0 bg-[#131211]/90 backdrop-blur-md rounded-2xl flex flex-col items-center justify-center p-6 text-center z-20">
-            <div className="w-14 h-14 rounded-full bg-emerald-950/40 border border-emerald-600/40 flex items-center justify-center text-emerald-400 mb-2">
+          <div className="absolute inset-0 bg-white/95 backdrop-blur-md rounded-2xl flex flex-col items-center justify-center p-6 text-center z-20">
+            <div className="w-14 h-14 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 mb-2">
               <Trophy className="w-7 h-7" />
             </div>
-            <h3 className="text-lg font-extrabold text-[#faf8f5] mb-1">Excelente Foco Visual!</h3>
-            <p className="text-xs text-[#a39b8e] mb-3">Tabela {gridSize}x{gridSize} concluída com sucesso.</p>
+            <h3 className="text-lg font-extrabold text-stone-900 mb-1">Excelente Foco Visual!</h3>
+            <p className="text-xs text-stone-500 mb-3">Tabela {gridSize}x{gridSize} concluída com sucesso.</p>
 
-            <div className="bg-[#1c1917] border border-[#2c2724] py-3 px-6 rounded-xl mb-4 text-center">
-              <span className="text-[11px] text-[#a39b8e] uppercase tracking-wider block font-medium">Tempo Total</span>
-              <span className="text-3xl font-black text-emerald-400 font-mono">{elapsedTime.toFixed(1)}s</span>
+            <div className="bg-stone-50 border border-stone-200 py-3 px-6 rounded-xl mb-4 text-center">
+              <span className="text-[11px] text-stone-500 uppercase tracking-wider block font-medium">Tempo Total</span>
+              <span className="text-3xl font-black text-emerald-700 font-mono">{elapsedTime.toFixed(1)}s</span>
             </div>
 
             <div className="flex gap-2 w-full max-w-xs">
               <button
                 onClick={handleStart}
-                className="flex-1 py-3 px-3 rounded-xl bg-[#24211e] hover:bg-[#2c2724] text-[#d8d0c2] font-semibold text-xs flex items-center justify-center gap-1.5 transition-all"
+                className="flex-1 py-3 px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all"
               >
                 <RotateCcw className="w-4 h-4" />
                 <span>Repetir</span>
@@ -280,7 +280,7 @@ export const SchulteTable: React.FC<SchulteTableProps> = ({ onComplete, onBack, 
               {onComplete && (
                 <button
                   onClick={() => onComplete(Number(elapsedTime.toFixed(2)))}
-                  className="flex-1 py-3 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition-all"
+                  className="flex-1 py-3 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>Avançar</span>
@@ -295,7 +295,7 @@ export const SchulteTable: React.FC<SchulteTableProps> = ({ onComplete, onBack, 
         <div className="mt-4 flex justify-center">
           <button
             onClick={handleStop}
-            className="py-2.5 px-6 rounded-xl bg-[#1c1917] border border-[#2c2724] text-[#a39b8e] hover:text-[#f3efe8] text-xs font-semibold flex items-center gap-2"
+            className="py-2.5 px-6 rounded-xl bg-white border border-stone-200 text-stone-600 hover:text-stone-900 text-xs font-semibold flex items-center gap-2 shadow-2xs"
           >
             <RotateCcw className="w-4 h-4" />
             <span>Reiniciar Tabela</span>

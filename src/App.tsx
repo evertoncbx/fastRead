@@ -238,7 +238,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#191715] text-[#f3efe8] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F8FAF9] text-slate-800 flex flex-col font-sans">
       {/* Modal de Cadastro / Restauração Multi-Dispositivo */}
       <AuthModal
         isOpen={user === null}

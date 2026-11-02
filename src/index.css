@@ -5,14 +5,14 @@
 @layer base {
   html {
     -webkit-tap-highlight-color: transparent;
-    background-color: #191715;
-    color: #f5efe6;
+    background-color: #F8FAF9;
+    color: #1E293B;
   }
   
   body {
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    background-color: #191715;
-    color: #f5efe6;
+    background-color: #F8FAF9;
+    color: #1E293B;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
   }
@@ -25,7 +25,7 @@
   letter-spacing: 0.012em;
 }
 
-/* Custom scrollbar para ambiente de leitura */
+/* Custom scrollbar para ambiente de leitura diurno */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -36,10 +36,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(163, 155, 142, 0.25);
+  background: rgba(148, 163, 184, 0.35);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(163, 155, 142, 0.45);
+  background: rgba(148, 163, 184, 0.6);
 }

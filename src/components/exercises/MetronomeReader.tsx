@@ -31,10 +31,10 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
   const [wordsPerBeat, setWordsPerBeat] = useState<number>(1);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
-  const [isAccentBeat, setIsAccentBeat] = useState<boolean>(false);
+  const [, setIsAccentBeat] = useState<boolean>(false);
   const [beatCount, setBeatCount] = useState<number>(0);
   const [isFinished, setIsFinished] = useState<boolean>(false);
-  const [sessionSeconds, setSessionSeconds] = useState<number>(180);
+  const [sessionSeconds] = useState<number>(180);
   const [remainingSeconds, setRemainingSeconds] = useState<number>(180);
   const [soundOn, setSoundOn] = useState<boolean>(audio.isEnabled());
 
@@ -44,7 +44,6 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
     return currentText.text.split(/\s+/).filter(w => w.trim().length > 0);
   }, [currentText]);
 
-  const intervalMs = Math.round((60 / bpm) * 1000);
   const calculatedWpm = bpm * wordsPerBeat;
 
   const metronomeTimerRef = useRef<number | null>(null);
@@ -104,7 +103,7 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
         }
         return next;
       });
-    }, intervalMs);
+    }, Math.round((60 / bpm) * 1000));
   };
 
   const stopMetronome = () => {
@@ -113,22 +112,21 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
     if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
   };
 
-  const handleReset = () => {
-    stopMetronome();
-    setCurrentIndex(0);
-    setRemainingSeconds(sessionSeconds);
-    setBeatCount(0);
-    setIsFinished(false);
-  };
-
   const handleSessionComplete = () => {
     setIsFinished(true);
     audio.playSuccess();
     confetti({
-      particleCount: 70,
+      particleCount: 80,
       spread: 60,
       origin: { y: 0.6 }
     });
+  };
+
+  const handleReset = () => {
+    stopMetronome();
+    setCurrentIndex(0);
+    setRemainingSeconds(sessionSeconds);
+    setIsFinished(false);
   };
 
   const toggleSound = () => {
@@ -143,13 +141,13 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
   };
 
   return (
-    <div className="flex flex-col min-h-full max-w-lg mx-auto p-4 pb-24 text-[#f3efe8]">
+    <div className="flex flex-col min-h-full max-w-lg mx-auto p-4 pb-24 text-stone-800">
       {/* Top bar */}
       <div className="flex items-center justify-between mb-4">
         {onBack ? (
           <button
             onClick={onBack}
-            className="flex items-center gap-1.5 text-sm text-[#a39b8e] hover:text-[#f3efe8] transition-colors py-1 px-2.5 rounded-lg bg-[#1c1917] border border-[#2c2724]"
+            className="flex items-center gap-1.5 text-sm text-stone-600 hover:text-stone-900 transition-colors py-1 px-2.5 rounded-lg bg-white border border-stone-200 shadow-2xs"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Voltar</span>
@@ -160,42 +158,42 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
           <button
             onClick={toggleSound}
             aria-label="Alternar som"
-            className="p-2 rounded-lg bg-[#1c1917] border border-[#2c2724] text-[#a39b8e] hover:text-[#f3efe8] transition-colors"
+            className="p-2 rounded-lg bg-white border border-stone-200 text-stone-600 hover:text-stone-900 shadow-2xs transition-colors"
           >
-            {soundOn ? <Volume2 className="w-4 h-4 text-amber-400" /> : <VolumeX className="w-4 h-4 text-[#766f63]" />}
+            {soundOn ? <Volume2 className="w-4 h-4 text-emerald-600" /> : <VolumeX className="w-4 h-4 text-stone-400" />}
           </button>
         </div>
       </div>
 
       {/* Header Info */}
-      <div className="bg-gradient-to-br from-[#24211e] via-[#1c1917] to-[#1c1917] p-4 rounded-2xl border border-[#3d3834] mb-4 shadow-md">
+      <div className="bg-white p-4 rounded-2xl border border-stone-200 mb-4 shadow-xs">
         <div className="flex items-center gap-2.5 mb-1.5">
-          <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+          <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700">
             <Clock className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-[#faf8f5] flex items-center gap-2">
+            <h2 className="text-lg font-bold text-stone-900 flex items-center gap-2">
               Metrônomo Anti-Subvocalização
-              {isDailyStep && <span className="text-xs bg-amber-500/15 text-amber-300 border border-amber-500/25 px-2 py-0.5 rounded-full font-medium">Jornada</span>}
+              {isDailyStep && <span className="text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-medium">Jornada</span>}
             </h2>
-            <p className="text-xs text-[#a39b8e]">Silenciando a voz interior com cadência rítmica forçada</p>
+            <p className="text-xs text-stone-500">Silenciando a voz interior com cadência rítmica forçada</p>
           </div>
         </div>
 
         {/* Instruções neurocientíficas */}
-        <div className="mt-3 bg-[#131211]/80 p-2.5 rounded-xl border border-[#2c2724] text-xs text-[#d8d0c2] flex items-start gap-2">
-          <Zap className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+        <div className="mt-3 bg-emerald-50/80 p-2.5 rounded-xl border border-emerald-200 text-xs text-emerald-900 flex items-start gap-2">
+          <Zap className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
           <div>
-            <strong className="text-[#faf8f5] block mb-0.5">Técnica Comprovada:</strong>
+            <strong className="text-emerald-950 block mb-0.5">Técnica Comprovada:</strong>
             Mantenha a língua relaxada contra o céu da boca. Acompanhe a palavra destacada no ritmo do metrônomo. Não pronuncie as palavras mentalmente — confie na captação visual direta!
           </div>
         </div>
       </div>
 
       {/* Seletor de Textos */}
-      <div className="mb-3 bg-[#1c1917] border border-[#2c2724] p-2.5 rounded-xl">
-        <label className="text-[11px] uppercase tracking-wider text-[#a39b8e] font-medium block mb-1.5 flex items-center gap-1.5">
-          <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+      <div className="mb-3 bg-white border border-stone-200 p-2.5 rounded-xl shadow-xs">
+        <label className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold block mb-1.5 flex items-center gap-1.5">
+          <BookOpen className="w-3.5 h-3.5 text-emerald-600" />
           Texto Selecionado:
         </label>
         <select
@@ -205,7 +203,7 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
             setSelectedTextIndex(Number(e.target.value));
             handleReset();
           }}
-          className="w-full bg-[#131211] border border-[#2c2724] rounded-lg py-1.5 px-3 text-xs text-[#f3efe8] font-medium focus:outline-none focus:border-amber-500"
+          className="w-full bg-stone-50 border border-stone-200 rounded-lg py-1.5 px-3 text-xs text-stone-800 font-medium focus:bg-white focus:outline-none focus:border-emerald-500"
         >
           {availableTexts.map((item, idx) => (
             <option key={item.id} value={idx}>
@@ -216,18 +214,18 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
       </div>
 
       {/* Controles de BPM & Velocidade */}
-      <div className="bg-[#1c1917] border border-[#2c2724] p-3 rounded-2xl mb-4">
+      <div className="bg-white border border-stone-200 p-3.5 rounded-2xl mb-4 shadow-xs">
         <div className="flex items-center justify-between mb-2">
           <div>
-            <span className="text-[11px] uppercase tracking-wider text-[#a39b8e] block font-medium">Velocidade Alvo</span>
-            <span className="text-2xl font-black text-[#faf8f5] font-mono flex items-center gap-2">
-              {calculatedWpm} <span className="text-xs font-semibold text-amber-400">PPM</span>
+            <span className="text-[11px] uppercase tracking-wider text-stone-500 block font-semibold">Velocidade Alvo</span>
+            <span className="text-2xl font-black text-stone-900 font-mono flex items-center gap-2">
+              {calculatedWpm} <span className="text-xs font-semibold text-emerald-700">PPM</span>
             </span>
           </div>
 
           <div className="text-right">
-            <span className="text-[11px] uppercase tracking-wider text-[#a39b8e] block font-medium">Tempo Restante</span>
-            <span className="text-lg font-bold text-amber-400 font-mono">
+            <span className="text-[11px] uppercase tracking-wider text-stone-500 block font-semibold">Tempo Restante</span>
+            <span className="text-lg font-bold text-emerald-700 font-mono">
               {formatTime(remainingSeconds)}
             </span>
           </div>
@@ -235,7 +233,7 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
 
         {/* Slider de BPM */}
         <div className="space-y-1.5 mt-2">
-          <div className="flex justify-between text-xs text-[#a39b8e]">
+          <div className="flex justify-between text-xs text-stone-500">
             <span>Cadência: {bpm} BPM</span>
             <span>{wordsPerBeat === 1 ? '1 palavra/batida' : '2 palavras/batida'}</span>
           </div>
@@ -247,9 +245,9 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
             value={bpm}
             disabled={isPlaying}
             onChange={(e) => setBpm(Number(e.target.value))}
-            className="w-full accent-amber-500 bg-[#24211e] h-2 rounded-lg cursor-pointer"
+            className="w-full accent-emerald-600 bg-stone-100 h-2 rounded-lg cursor-pointer"
           />
-          <div className="flex justify-between text-[10px] text-[#766f63] font-mono">
+          <div className="flex justify-between text-[10px] text-stone-400 font-mono">
             <span>120 BPM (Iniciante)</span>
             <span>220 BPM (Acelerado)</span>
             <span>360 BPM (Turbo)</span>
@@ -257,7 +255,7 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
         </div>
 
         {/* Pulso Visual do Metrônomo (4 tempos) */}
-        <div className="flex items-center justify-center gap-3 mt-3 pt-3 border-t border-[#2c2724]">
+        <div className="flex items-center justify-center gap-3 mt-3 pt-3 border-t border-stone-100">
           {[1, 2, 3, 4].map((step) => {
             const isActive = isPlaying && ((beatCount % 4) === (step % 4));
             return (
@@ -266,9 +264,9 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
                 className={`w-4 h-4 rounded-full transition-all duration-75 flex items-center justify-center ${
                   isActive
                     ? step === 1
-                      ? 'bg-amber-400 scale-125 shadow-md shadow-amber-400/40'
-                      : 'bg-amber-500 scale-110 shadow-sm shadow-amber-500/30'
-                    : 'bg-[#24211e] border border-[#36322e]'
+                      ? 'bg-emerald-600 scale-125 shadow-xs shadow-emerald-500/50'
+                      : 'bg-emerald-500 scale-110 shadow-xs'
+                    : 'bg-stone-200'
                 }`}
               />
             );
@@ -277,7 +275,7 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
       </div>
 
       {/* Janela de Leitura com Cursor Rítmico */}
-      <div className="relative bg-[#1c1917] border border-[#2c2724] rounded-2xl shadow-xl overflow-hidden mb-4 flex-1 min-h-[220px] max-h-[320px] flex flex-col">
+      <div className="relative bg-[#FCFBF8] border border-stone-200 rounded-2xl shadow-xs overflow-hidden mb-4 flex-1 min-h-[220px] max-h-[320px] flex flex-col">
         <div
           ref={wordsContainerRef}
           className="relative p-4 overflow-y-auto leading-relaxed text-sm md:text-base font-reading select-none space-x-1 space-y-1"
@@ -292,10 +290,10 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
                 ref={isCurrent ? activeWordRef : null}
                 className={`inline-block transition-all duration-75 rounded px-1.5 py-0.5 ${
                   isCurrent
-                    ? 'bg-amber-600 text-white font-bold scale-105 shadow-md shadow-amber-900/40'
+                    ? 'bg-emerald-600 text-white font-bold scale-105 shadow-xs'
                     : isPast
-                    ? 'text-[#766f63]'
-                    : 'text-[#d8d0c2]'
+                    ? 'text-stone-400'
+                    : 'text-stone-800'
                 }`}
               >
                 {word}
@@ -306,20 +304,20 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
 
         {/* Overlay se finalizou */}
         {isFinished && (
-          <div className="absolute inset-0 bg-[#131211]/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center z-20">
-            <div className="w-12 h-12 rounded-full bg-emerald-950/40 border border-emerald-600/40 flex items-center justify-center text-emerald-400 mb-2">
+          <div className="absolute inset-0 bg-white/95 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center z-20">
+            <div className="w-12 h-12 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 mb-2">
               <CheckCircle2 className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-bold text-[#faf8f5] mb-1">Excelente Ritmo Mantido!</h3>
-            <p className="text-xs text-[#a39b8e] mb-3">Sua subvocalização foi silenciada em prol da percepção visual.</p>
-            <div className="bg-[#1c1917] border border-[#2c2724] py-2 px-5 rounded-xl mb-4 font-mono">
-              <span className="text-[11px] text-[#766f63] block">Velocidade Mantida</span>
-              <span className="text-2xl font-black text-amber-400">{calculatedWpm} PPM</span>
+            <h3 className="text-base font-bold text-stone-900 mb-1">Excelente Ritmo Mantido!</h3>
+            <p className="text-xs text-stone-500 mb-3">Sua subvocalização foi silenciada em prol da percepção visual.</p>
+            <div className="bg-stone-50 border border-stone-200 py-2 px-5 rounded-xl mb-4 font-mono">
+              <span className="text-[11px] text-stone-500 block">Velocidade Mantida</span>
+              <span className="text-2xl font-black text-emerald-700">{calculatedWpm} PPM</span>
             </div>
             {onComplete && (
               <button
                 onClick={() => onComplete(calculatedWpm, Math.max(1, Math.round((sessionSeconds - remainingSeconds) / 60)))}
-                className="py-2.5 px-6 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs flex items-center gap-2 shadow-md transition-all"
+                className="py-2.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 shadow-xs transition-all"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Concluir Exercício</span>
@@ -333,10 +331,10 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
       <div className="flex gap-2">
         <button
           onClick={isPlaying ? stopMetronome : startMetronome}
-          className={`flex-1 py-3.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md ${
+          className={`flex-1 py-3.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-xs ${
             isPlaying
-              ? 'bg-[#2c2724] hover:bg-[#36322e] text-[#f3efe8]'
-              : 'bg-amber-600 hover:bg-amber-500 text-white shadow-amber-900/30'
+              ? 'bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-200'
+              : 'bg-emerald-600 hover:bg-emerald-700 text-white'
           }`}
         >
           {isPlaying ? (
@@ -355,7 +353,7 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
         <button
           onClick={handleReset}
           aria-label="Reiniciar texto"
-          className="p-3.5 rounded-xl bg-[#1c1917] border border-[#2c2724] text-[#a39b8e] hover:text-[#f3efe8] hover:bg-[#24211e] transition-colors"
+          className="p-3.5 rounded-xl bg-white border border-stone-200 text-stone-600 hover:text-stone-900 hover:bg-stone-50 transition-colors shadow-2xs"
         >
           <RotateCcw className="w-5 h-5" />
         </button>

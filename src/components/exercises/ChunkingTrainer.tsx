@@ -104,13 +104,13 @@ export const ChunkingTrainer: React.FC<ChunkingTrainerProps> = ({ customText, on
   };
 
   return (
-    <div className="flex flex-col min-h-full max-w-lg mx-auto p-4 pb-24 text-[#f3efe8]">
+    <div className="flex flex-col min-h-full max-w-lg mx-auto p-4 pb-24 text-stone-800">
       {/* Top bar */}
       <div className="flex items-center justify-between mb-4">
         {onBack ? (
           <button
             onClick={onBack}
-            className="flex items-center gap-1.5 text-sm text-[#a39b8e] hover:text-[#f3efe8] transition-colors py-1 px-2.5 rounded-lg bg-[#1c1917] border border-[#2c2724]"
+            className="flex items-center gap-1.5 text-sm text-stone-600 hover:text-stone-900 transition-colors py-1 px-2.5 rounded-lg bg-white border border-stone-200 shadow-2xs"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Voltar</span>
@@ -119,33 +119,33 @@ export const ChunkingTrainer: React.FC<ChunkingTrainerProps> = ({ customText, on
       </div>
 
       {/* Header Info */}
-      <div className="bg-gradient-to-br from-[#24211e] via-[#1c1917] to-[#1c1917] p-4 rounded-2xl border border-[#3d3834] mb-4 shadow-md">
+      <div className="bg-white p-4 rounded-2xl border border-stone-200 mb-4 shadow-xs">
         <div className="flex items-center gap-2.5 mb-1.5">
-          <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+          <div className="w-9 h-9 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-700">
             <Layers className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-[#faf8f5] flex items-center gap-2">
+            <h2 className="text-lg font-bold text-stone-900 flex items-center gap-2">
               Leitura em Blocos (Chunking)
-              {isDailyStep && <span className="text-xs bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 px-2 py-0.5 rounded-full font-medium">Jornada</span>}
+              {isDailyStep && <span className="text-xs bg-teal-50 text-teal-700 border border-teal-200 px-2 py-0.5 rounded-full font-medium">Jornada</span>}
             </h2>
-            <p className="text-xs text-[#a39b8e]">Expansão de fixação ocular e agrupamento de sintagmas</p>
+            <p className="text-xs text-stone-500">Expansão de fixação ocular e agrupamento de sintagmas</p>
           </div>
         </div>
 
         {/* Dica da técnica */}
-        <div className="mt-3 bg-[#131211]/80 p-2.5 rounded-xl border border-[#2c2724] text-xs text-[#d8d0c2] flex items-start gap-2">
-          <Zap className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+        <div className="mt-3 bg-teal-50/80 p-2.5 rounded-xl border border-teal-200 text-xs text-teal-900 flex items-start gap-2">
+          <Zap className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
           <span>
-            <strong className="text-[#faf8f5]">Instrução:</strong> Em vez de olhar para cada palavra individualmente, foque seus olhos no meio de cada <span className="text-emerald-400 font-bold">bloco destacado</span>, absorvendo o grupo como uma única unidade conceitual.
+            <strong className="text-teal-950">Instrução:</strong> Em vez de olhar para cada palavra individualmente, foque seus olhos no meio de cada <span className="text-teal-700 font-bold">bloco destacado</span>, absorvendo o grupo como uma única unidade conceitual.
           </span>
         </div>
       </div>
 
       {/* Seletor de Textos */}
-      <div className="mb-3 bg-[#1c1917] border border-[#2c2724] p-2.5 rounded-xl">
-        <label className="text-[11px] uppercase tracking-wider text-[#a39b8e] font-medium block mb-1.5 flex items-center gap-1.5">
-          <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+      <div className="mb-3 bg-white border border-stone-200 p-2.5 rounded-xl shadow-xs">
+        <label className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold block mb-1.5 flex items-center gap-1.5">
+          <BookOpen className="w-3.5 h-3.5 text-emerald-600" />
           Texto de Treino:
         </label>
         <select
@@ -155,7 +155,7 @@ export const ChunkingTrainer: React.FC<ChunkingTrainerProps> = ({ customText, on
             setSelectedTextIndex(Number(e.target.value));
             handleReset();
           }}
-          className="w-full bg-[#131211] border border-[#2c2724] rounded-lg py-1.5 px-3 text-xs text-[#f3efe8] font-medium focus:outline-none focus:border-amber-500"
+          className="w-full bg-stone-50 border border-stone-200 rounded-lg py-1.5 px-3 text-xs text-stone-800 font-medium focus:bg-white focus:outline-none focus:border-emerald-500"
         >
           {availableTexts.map((item, idx) => (
             <option key={item.id} value={idx}>
@@ -168,8 +168,8 @@ export const ChunkingTrainer: React.FC<ChunkingTrainerProps> = ({ customText, on
       {/* Controles de Configuração */}
       <div className="grid grid-cols-2 gap-3 mb-4">
         {/* Tamanho do Bloco */}
-        <div className="bg-[#1c1917] border border-[#2c2724] p-3 rounded-xl">
-          <span className="text-[11px] uppercase tracking-wider text-[#a39b8e] block font-medium mb-1.5">Bloco Ocular</span>
+        <div className="bg-white border border-stone-200 p-3 rounded-xl shadow-xs">
+          <span className="text-[11px] uppercase tracking-wider text-stone-500 block font-semibold mb-1.5">Bloco Ocular</span>
           <div className="flex gap-1.5">
             {[2, 3, 4].map((size) => (
               <button
@@ -181,8 +181,8 @@ export const ChunkingTrainer: React.FC<ChunkingTrainerProps> = ({ customText, on
                 }}
                 className={`flex-1 py-1 px-1.5 text-xs font-bold rounded-lg transition-all ${
                   chunkSize === size
-                    ? 'bg-emerald-700 text-white'
-                    : 'bg-[#24211e] text-[#a39b8e] hover:text-[#f3efe8]'
+                    ? 'bg-teal-600 text-white'
+                    : 'bg-stone-100 text-stone-600 hover:text-stone-900'
                 }`}
               >
                 {size} pal.
@@ -192,14 +192,14 @@ export const ChunkingTrainer: React.FC<ChunkingTrainerProps> = ({ customText, on
         </div>
 
         {/* Velocidade PPM */}
-        <div className="bg-[#1c1917] border border-[#2c2724] p-3 rounded-xl">
-          <span className="text-[11px] uppercase tracking-wider text-[#a39b8e] block font-medium mb-1">Velocidade</span>
-          <span className="text-xl font-black text-[#faf8f5] font-mono">{wpm} <span className="text-xs text-emerald-400">PPM</span></span>
+        <div className="bg-white border border-stone-200 p-3 rounded-xl shadow-xs">
+          <span className="text-[11px] uppercase tracking-wider text-stone-500 block font-semibold mb-1">Velocidade</span>
+          <span className="text-xl font-black text-stone-900 font-mono">{wpm} <span className="text-xs text-teal-700">PPM</span></span>
         </div>
       </div>
 
       {/* Slider de Velocidade */}
-      <div className="bg-[#1c1917] border border-[#2c2724] p-3 rounded-xl mb-4">
+      <div className="bg-white border border-stone-200 p-3 rounded-xl mb-4 shadow-xs">
         <input
           type="range"
           min="180"
@@ -208,9 +208,9 @@ export const ChunkingTrainer: React.FC<ChunkingTrainerProps> = ({ customText, on
           value={wpm}
           disabled={isPlaying}
           onChange={(e) => setWpm(Number(e.target.value))}
-          className="w-full accent-emerald-500 bg-[#24211e] h-2 rounded-lg cursor-pointer"
+          className="w-full accent-teal-600 bg-stone-100 h-2 rounded-lg cursor-pointer"
         />
-        <div className="flex justify-between text-[10px] text-[#766f63] font-mono mt-1">
+        <div className="flex justify-between text-[10px] text-stone-400 font-mono mt-1">
           <span>180 PPM (Leve)</span>
           <span>350 PPM (Acelerado)</span>
           <span>600 PPM (Turbo)</span>
@@ -218,7 +218,7 @@ export const ChunkingTrainer: React.FC<ChunkingTrainerProps> = ({ customText, on
       </div>
 
       {/* Coluna Centralizada de Blocos de Leitura */}
-      <div className="relative bg-[#1c1917] border border-[#2c2724] rounded-2xl shadow-xl overflow-hidden mb-4 flex-1 min-h-[220px] max-h-[340px] flex flex-col">
+      <div className="relative bg-[#FCFBF8] border border-stone-200 rounded-2xl shadow-xs overflow-hidden mb-4 flex-1 min-h-[220px] max-h-[340px] flex flex-col">
         <div
           ref={chunkContainerRef}
           className="p-5 overflow-y-auto space-y-3.5 flex flex-col items-center font-reading"
@@ -233,10 +233,10 @@ export const ChunkingTrainer: React.FC<ChunkingTrainerProps> = ({ customText, on
                 ref={isCurrent ? activeChunkRef : null}
                 className={`py-2 px-4 rounded-xl text-center font-medium transition-all duration-150 max-w-[280px] w-full ${
                   isCurrent
-                    ? 'bg-emerald-700 text-white font-bold text-lg scale-105 shadow-md ring-2 ring-emerald-400'
+                    ? 'bg-teal-600 text-white font-bold text-lg scale-105 shadow-xs ring-2 ring-teal-400'
                     : isPast
-                    ? 'text-[#766f63] text-sm opacity-60'
-                    : 'text-[#a39b8e] text-sm'
+                    ? 'text-stone-300 text-sm opacity-60'
+                    : 'text-stone-700 text-sm'
                 }`}
               >
                 {chunk}
@@ -247,16 +247,16 @@ export const ChunkingTrainer: React.FC<ChunkingTrainerProps> = ({ customText, on
 
         {/* Overlay se concluído */}
         {isFinished && (
-          <div className="absolute inset-0 bg-[#131211]/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center z-20">
-            <div className="w-12 h-12 rounded-full bg-emerald-950/40 border border-emerald-600/40 flex items-center justify-center text-emerald-400 mb-2">
+          <div className="absolute inset-0 bg-white/95 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center z-20">
+            <div className="w-12 h-12 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 mb-2">
               <CheckCircle2 className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-bold text-[#faf8f5] mb-1">Treino em Blocos Concluído!</h3>
-            <p className="text-xs text-[#a39b8e] mb-3">Sua fóvea ocular foi exercitada para capturar {chunkSize} palavras por fixação.</p>
+            <h3 className="text-base font-bold text-stone-900 mb-1">Treino em Blocos Concluído!</h3>
+            <p className="text-xs text-stone-500 mb-3">Sua fóvea ocular foi exercitada para capturar {chunkSize} palavras por fixação.</p>
             {onComplete && (
               <button
                 onClick={() => onComplete(wpm, Math.max(1, Math.round((chunks.length * chunkSize) / wpm)))}
-                className="py-2.5 px-6 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs flex items-center gap-2 shadow-md transition-all"
+                className="py-2.5 px-6 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center gap-2 shadow-xs transition-all"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Continuar</span>
@@ -270,10 +270,10 @@ export const ChunkingTrainer: React.FC<ChunkingTrainerProps> = ({ customText, on
       <div className="flex gap-2">
         <button
           onClick={isPlaying ? handleStop : handleStart}
-          className={`flex-1 py-3.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md ${
+          className={`flex-1 py-3.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-xs ${
             isPlaying
-              ? 'bg-[#2c2724] hover:bg-[#36322e] text-[#f3efe8]'
-              : 'bg-emerald-700 hover:bg-emerald-600 text-white shadow-emerald-900/30'
+              ? 'bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-200'
+              : 'bg-teal-600 hover:bg-teal-700 text-white'
           }`}
         >
           {isPlaying ? (
@@ -292,7 +292,7 @@ export const ChunkingTrainer: React.FC<ChunkingTrainerProps> = ({ customText, on
         <button
           onClick={handleReset}
           aria-label="Reiniciar"
-          className="p-3.5 rounded-xl bg-[#1c1917] border border-[#2c2724] text-[#a39b8e] hover:text-[#f3efe8] transition-colors"
+          className="p-3.5 rounded-xl bg-white border border-stone-200 text-stone-600 hover:text-stone-900 hover:bg-stone-50 transition-colors shadow-2xs"
         >
           <RotateCcw className="w-5 h-5" />
         </button>

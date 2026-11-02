@@ -43,7 +43,14 @@ export const App: React.FC = () => {
 
     // Sincronização em segundo plano para manter perfil e nuvem sempre alinhados
     if (loadedUser && loadedUser.email) {
-      void storage.syncToRemote(loadedUser, storage.getResults());
+      void storage.syncToRemote(loadedUser, storage.getResults(), storage.getDailyProgress());
+
+      // Sincroniza progresso diário salvo na nuvem
+      void storage.fetchDailyProgressFromRemote(loadedUser.email).then((remoteDaily) => {
+        if (remoteDaily) {
+          setDailyProgress(remoteDaily);
+        }
+      });
     }
 
     // Se o usuário existir mas nunca realizou o teste diagnóstico inicial, abre o teste

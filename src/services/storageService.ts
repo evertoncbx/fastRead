@@ -4,9 +4,32 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 const USER_KEY = 'fastread_user_profile';
 const RESULTS_KEY = 'fastread_exercise_results';
 const DAILY_KEY = 'fastread_daily_progress';
+
+// Conexão Padrão: Supabase do "projeta" (schema fr.* e tabelas fr_*)
+export const DEFAULT_SUPABASE_URL = 'https://fvsrnuovfzcugkwdwixs.supabase.co';
+export const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_y61ZayzWcRQSTHLQ0sqaZg_Z5NdiHpk';
+
+export const FR_TABLES = {
+  PROFILES: 'fr_profiles',
+  RESULTS: 'fr_exercise_results',
+  DAILY: 'fr_daily_progress'
+} as const;
+
 const DEFAULT_STORAGE_URL = 'https://fvsrnuovfzcugkwdwixs.supabase.co/storage/v1/object';
 const DEFAULT_STORAGE_BUCKET = 'bridge-files';
 const DEFAULT_STORAGE_KEY = 'sb_publishable_y61ZayzWcRQSTHLQ0sqaZg_Z5NdiHpk';
+
+/**
+ * Retorna a data no fuso local do dispositivo em formato YYYY-MM-DD.
+ * Evita o bug de fuso horário UTC onde treinos feitos às 21h em Brasília (UTC-3)
+ * viravam o dia para amanhã e resetavam o progresso diário.
+ */
+export function getLocalDateString(d: Date = new Date()): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 // Helper seguro para converter o e-mail em chave de armazenamento persistente
 export function emailToStorageKey(email: string): string {
@@ -57,9 +80,9 @@ const safeStorage = {
   }
 };
 
-// Supabase client instance (opcional)
-const supabaseUrl = getEnvVar('VITE_SUPABASE_URL');
-const supabaseAnonKey = getEnvVar('VITE_SUPABASE_ANON_KEY');
+// Supabase client instance (com fallback direto ao banco 'projeta')
+const supabaseUrl = getEnvVar('VITE_SUPABASE_URL') || DEFAULT_SUPABASE_URL;
+const supabaseAnonKey = getEnvVar('VITE_SUPABASE_ANON_KEY') || DEFAULT_SUPABASE_ANON_KEY;
 let supabase: SupabaseClient | null = null;
 
 if (supabaseUrl && supabaseAnonKey && supabaseUrl.startsWith('http')) {
@@ -75,6 +98,7 @@ export const getSupabaseClient = () => supabase;
 export interface RemoteSyncResult {
   profile: UserProfile | null;
   results: ExerciseResult[];
+  dailyProgress?: DailyProgress | null;
   source: 'supabase' | 'cloud' | 'local' | null;
 }
 
@@ -91,7 +115,7 @@ export const storage = {
         const todayStr = this.getTodayDateString();
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        const yesterdayStr = getLocalDateString(yesterday);
 
         if (user.lastActiveDate !== todayStr && user.lastActiveDate !== yesterdayStr) {
           if (user.streakDays > 0) {
@@ -112,7 +136,7 @@ export const storage = {
       safeStorage.setItem(USER_KEY, JSON.stringify(profile));
 
       // Sincronização remota em segundo plano
-      void this.syncToRemote(profile, this.getResults());
+      void this.syncToRemote(profile, this.getResults(), this.getDailyProgress());
     } catch (e) {
       console.error('Failed to save user', e);
     }
@@ -172,27 +196,50 @@ export const storage = {
         avgComp = Math.round((avgComp * (testsCompleted - 1) + result.comprehensionScore) / testsCompleted);
       }
 
-      const updatedUser = {
+      const updatedUser: UserProfile = {
         ...user,
         currentWpm,
         bestWpm,
         totalMinutesTrained: totalMinutes,
         testsCompleted,
-        averageComprehension: avgComp
+        averageComprehension: avgComp,
+        lastActiveDate: this.getTodayDateString()
       };
       safeStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
 
-      // Sincronização remota
-      void this.syncToRemote(updatedUser, trimmed);
+      // Sincronização remota para o banco fr_*
+      void this.syncToRemote(updatedUser, trimmed, this.getDailyProgress());
+
+      // Salva o resultado individual na tabela fr_exercise_results
+      void this.saveResultToSupabase(newResult, user.email);
     }
 
     return newResult;
   },
 
-  // === DAILY PROGRESS ===
+  async saveResultToSupabase(result: ExerciseResult, userEmail?: string): Promise<void> {
+    if (!supabase) return;
+    try {
+      await supabase.from(FR_TABLES.RESULTS).insert({
+        id: result.id,
+        user_id: result.userId,
+        user_email: (userEmail || '').toLowerCase().trim(),
+        exercise_type: result.exerciseType,
+        title: result.title,
+        wpm: result.wpm ?? null,
+        comprehension_score: result.comprehensionScore ?? null,
+        duration_seconds: result.durationSeconds || 0,
+        score: result.score ?? null,
+        created_at: result.date || new Date().toISOString()
+      });
+    } catch (e) {
+      console.warn('Erro ao salvar resultado no Supabase:', e);
+    }
+  },
+
+  // === DAILY PROGRESS (JORNADA DIÁRIA) ===
   getTodayDateString(): string {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
+    return getLocalDateString(new Date());
   },
 
   getDailyProgress(): DailyProgress {
@@ -237,7 +284,7 @@ export const storage = {
         if (user.lastActiveDate !== todayStr) {
           const yesterday = new Date();
           yesterday.setDate(yesterday.getDate() - 1);
-          const yesterdayStr = yesterday.toISOString().split('T')[0];
+          const yesterdayStr = getLocalDateString(yesterday);
 
           if (user.lastActiveDate === yesterdayStr) {
             streak += 1;
@@ -252,29 +299,114 @@ export const storage = {
             lastActiveDate: todayStr
           });
         }
+
+        // PERSISTÊNCIA IMEDIATA DO PROGRESSO DIÁRIO NA NUVEM!
+        void this.saveDailyProgressToRemote(progress, user);
       }
     }
     return progress;
   },
 
-  // === CROSS-DEVICE SYNC & REMOTE LOOKUP ===
+  async saveDailyProgressToRemote(progress: DailyProgress, userParam?: UserProfile | null): Promise<void> {
+    const user = userParam || this.getUser();
+    if (!user || !user.email) return;
+
+    const cleanEmail = user.email.toLowerCase().trim();
+    const progressId = `dp_${user.id}_${progress.date}`;
+
+    // 1. Persistir no Supabase fr_daily_progress
+    if (supabase) {
+      try {
+        await supabase.from(FR_TABLES.DAILY).upsert({
+          id: progressId,
+          user_id: user.id,
+          user_email: cleanEmail,
+          date: progress.date,
+          completed_steps: progress.completedSteps,
+          total_minutes: progress.totalMinutes,
+          all_done: progress.allDone,
+          updated_at: new Date().toISOString()
+        });
+      } catch (e) {
+        console.warn('Erro ao salvar progresso diário no Supabase:', e);
+      }
+    }
+
+    // 2. Backup no Cloud KV
+    try {
+      await this.saveToCloudKV(user, this.getResults(), progress);
+    } catch {}
+  },
+
+  async fetchDailyProgressFromRemote(email: string, dateStr?: string): Promise<DailyProgress | null> {
+    const cleanEmail = email.toLowerCase().trim();
+    const targetDate = dateStr || this.getTodayDateString();
+
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from(FR_TABLES.DAILY)
+          .select('*')
+          .ilike('user_email', cleanEmail)
+          .eq('date', targetDate)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (!error && data) {
+          const steps = Array.isArray(data.completed_steps) ? data.completed_steps : [];
+          const remoteProgress: DailyProgress = {
+            date: data.date || targetDate,
+            completedSteps: steps,
+            totalMinutes: data.total_minutes || 0,
+            allDone: data.all_done || steps.length >= 5
+          };
+
+          // Mescla com o progresso local se existir
+          const local = this.getDailyProgress();
+          if (local.date === targetDate) {
+            const mergedSteps = Array.from(new Set([...local.completedSteps, ...remoteProgress.completedSteps]));
+            const mergedProgress: DailyProgress = {
+              date: targetDate,
+              completedSteps: mergedSteps,
+              totalMinutes: Math.max(local.totalMinutes, remoteProgress.totalMinutes),
+              allDone: mergedSteps.length >= 5 || local.allDone || remoteProgress.allDone
+            };
+            safeStorage.setItem(DAILY_KEY, JSON.stringify(mergedProgress));
+            return mergedProgress;
+          }
+
+          safeStorage.setItem(DAILY_KEY, JSON.stringify(remoteProgress));
+          return remoteProgress;
+        }
+      } catch (err) {
+        console.warn('Erro ao buscar progresso diário no Supabase:', err);
+      }
+    }
+
+    return null;
+  },
+
+  // === CROSS-DEVICE SYNC & REMOTE LOOKUP (AMARRADO 100% AO E-MAIL) ===
 
   /**
-   * Busca perfil existente pelo e-mail em Supabase e na Nuvem de Backup.
-   * Permite que ao abrir o Leitox no celular com o mesmo e-mail,
-   * os dados de baseline, target, streak e histórico sejam completamente restaurados.
+   * Busca perfil existente pelo e-mail em Supabase (tabela fr_profiles) e na Nuvem de Backup.
+   * Permite que ao abrir o Leitox no celular ou em outro computador com o mesmo e-mail,
+   * os dados de baseline, target, streak, histórico e progresso diário sejam completamente restaurados.
    */
   async fetchRemoteProfile(email: string): Promise<RemoteSyncResult> {
     const cleanEmail = email.toLowerCase().trim();
     if (!cleanEmail || !cleanEmail.includes('@')) {
-      return { profile: null, results: [], source: null };
+      return { profile: null, results: [], dailyProgress: null, source: null };
     }
 
-    // 1. Tentar Supabase se configurado
+    const todayStr = this.getTodayDateString();
+
+    // 1. Tentar Supabase fr_*
     if (supabase) {
       try {
         const { data, error } = await supabase
-          .from('profiles')
+          .from(FR_TABLES.PROFILES)
           .select('*')
           .ilike('email', cleanEmail)
           .order('updated_at', { ascending: false })
@@ -292,20 +424,20 @@ export const storage = {
             bestWpm: data.best_wpm || data.baseline_wpm || 0,
             averageComprehension: data.avg_comprehension || 0,
             streakDays: data.streak_days || 1,
-            lastActiveDate: data.updated_at ? data.updated_at.split('T')[0] : this.getTodayDateString(),
+            lastActiveDate: data.last_active_date || (data.updated_at ? data.updated_at.split('T')[0] : todayStr),
             totalMinutesTrained: data.total_minutes || 0,
             testsCompleted: data.tests_completed || 0,
             initialTestCompleted: data.initial_test_completed ?? (data.baseline_wpm > 0),
-            createdAt: data.updated_at || new Date().toISOString()
+            createdAt: data.created_at || new Date().toISOString()
           };
 
-          // Buscar histórico de exercícios
+          // Buscar histórico de exercícios da tabela fr_exercise_results
           let resultsList: ExerciseResult[] = [];
           try {
             const { data: resData } = await supabase
-              .from('exercise_results')
+              .from(FR_TABLES.RESULTS)
               .select('*')
-              .eq('user_id', data.id)
+              .or(`user_id.eq.${data.id},user_email.eq.${cleanEmail}`)
               .order('created_at', { ascending: false })
               .limit(50);
 
@@ -326,24 +458,53 @@ export const storage = {
             // Falha não crítica nos resultados
           }
 
+          // Buscar progresso diário da tabela fr_daily_progress
+          let restoredDaily: DailyProgress | null = null;
+          try {
+            const { data: dailyData } = await supabase
+              .from(FR_TABLES.DAILY)
+              .select('*')
+              .or(`user_id.eq.${data.id},user_email.eq.${cleanEmail}`)
+              .eq('date', todayStr)
+              .order('updated_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (dailyData) {
+              const steps = Array.isArray(dailyData.completed_steps) ? dailyData.completed_steps : [];
+              restoredDaily = {
+                date: dailyData.date || todayStr,
+                completedSteps: steps,
+                totalMinutes: dailyData.total_minutes || 0,
+                allDone: dailyData.all_done || steps.length >= 5
+              };
+            }
+          } catch {
+            // Falha não crítica no daily progress
+          }
+
           // Salvar localmente
           safeStorage.setItem(USER_KEY, JSON.stringify(restoredProfile));
           if (resultsList.length > 0) {
             safeStorage.setItem(RESULTS_KEY, JSON.stringify(resultsList));
           }
+          if (restoredDaily) {
+            safeStorage.setItem(DAILY_KEY, JSON.stringify(restoredDaily));
+          }
 
           return {
             profile: restoredProfile,
             results: resultsList,
+            dailyProgress: restoredDaily,
             source: 'supabase'
           };
         }
       } catch (err) {
-        console.warn('Supabase fetchProfileByEmail error:', err);
+        console.warn('Supabase fetchRemoteProfile error:', err);
       }
     }
 
-    // 2. Tentar Cloud Storage Sync (fallback persistente quando Supabase DB não estiver configurado)
+    // 2. Tentar Cloud Storage Sync (fallback de backup)
     try {
       const cloudObj = await this.fetchFromCloudKV(cleanEmail);
       if (cloudObj && cloudObj.profile) {
@@ -357,6 +518,7 @@ export const storage = {
         return {
           profile: cloudObj.profile,
           results: cloudObj.results || [],
+          dailyProgress: cloudObj.dailyProgress,
           source: 'cloud'
         };
       }
@@ -364,24 +526,30 @@ export const storage = {
       console.warn('Cloud KV fetch failed:', err);
     }
 
-    return { profile: null, results: [], source: null };
+    return { profile: null, results: [], dailyProgress: null, source: null };
   },
 
   /**
-   * Sincroniza o perfil atual e os resultados para o Supabase e Cloud KV.
+   * Sincroniza o perfil atual, resultados e progresso diário para o Supabase (fr_*) e Cloud KV.
    */
-  async syncToRemote(profile: UserProfile, results: ExerciseResult[]): Promise<boolean> {
+  async syncToRemote(
+    profile: UserProfile,
+    results: ExerciseResult[],
+    daily?: DailyProgress
+  ): Promise<boolean> {
     let synced = false;
+    const cleanEmail = profile.email.toLowerCase().trim();
+    const currentDaily = daily || this.getDailyProgress();
 
-    // 1. Supabase Custom DB (se configurado nas env vars)
+    // 1. Supabase fr_profiles & fr_daily_progress
     if (supabase) {
       try {
-        const { error } = await supabase
-          .from('profiles')
+        const { error: profErr } = await supabase
+          .from(FR_TABLES.PROFILES)
           .upsert({
             id: profile.id,
             name: profile.name,
-            email: profile.email.toLowerCase().trim(),
+            email: cleanEmail,
             baseline_wpm: profile.baselineWpm,
             target_wpm: profile.targetWpm,
             current_wpm: profile.currentWpm,
@@ -391,10 +559,26 @@ export const storage = {
             total_minutes: profile.totalMinutesTrained,
             tests_completed: profile.testsCompleted,
             initial_test_completed: profile.initialTestCompleted,
+            last_active_date: profile.lastActiveDate || this.getTodayDateString(),
             updated_at: new Date().toISOString()
           });
 
-        if (!error) synced = true;
+        if (!profErr) synced = true;
+
+        // Salvar progresso diário na tabela fr_daily_progress
+        const progressId = `dp_${profile.id}_${currentDaily.date}`;
+        await supabase
+          .from(FR_TABLES.DAILY)
+          .upsert({
+            id: progressId,
+            user_id: profile.id,
+            user_email: cleanEmail,
+            date: currentDaily.date,
+            completed_steps: currentDaily.completedSteps,
+            total_minutes: currentDaily.totalMinutes,
+            all_done: currentDaily.allDone,
+            updated_at: new Date().toISOString()
+          });
       } catch (err) {
         console.warn('Supabase sync error:', err);
       }
@@ -402,7 +586,7 @@ export const storage = {
 
     // 2. Cloud Storage Backup Persistente
     try {
-      await this.saveToCloudKV(profile, results.slice(0, 50));
+      await this.saveToCloudKV(profile, results.slice(0, 50), currentDaily);
       synced = true;
     } catch (err) {
       console.warn('Cloud Storage backup error:', err);
@@ -412,7 +596,11 @@ export const storage = {
   },
 
   // Helper para Cloud Storage Persistente (Supabase Storage com Bucket Público)
-  async saveToCloudKV(profile: UserProfile, results: ExerciseResult[]): Promise<void> {
+  async saveToCloudKV(
+    profile: UserProfile,
+    results: ExerciseResult[],
+    daily?: DailyProgress
+  ): Promise<void> {
     try {
       if (typeof fetch === 'undefined') return;
 
@@ -423,7 +611,7 @@ export const storage = {
       const payload = {
         profile,
         results: results.slice(0, 50),
-        dailyProgress: this.getDailyProgress(),
+        dailyProgress: daily || this.getDailyProgress(),
         syncedAt: new Date().toISOString()
       };
 
@@ -483,7 +671,7 @@ export const storage = {
     return null;
   },
 
-  // === EXPORTAÇÃO & IMPORTAÇÃO DE BACKUP / CÓDIGO DE SINCRONIZAÇÃO ===
+  // === EXPORTAÇÃO & IMPORTAÇÃO DE BACKUP (MANTIDO PARA TESTES INTERNOS) ===
   exportSyncCode(): string {
     const user = this.getUser();
     const results = this.getResults();

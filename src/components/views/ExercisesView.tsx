@@ -14,7 +14,7 @@ export const ExercisesView: React.FC<ExercisesViewProps> = ({ onSelectExercise }
       category: 'Visão Periférica',
       description: 'Expande o raio do campo parafoveal mantendo o olhar ancorado no centro.',
       icon: Eye,
-      color: 'bg-amber-50 text-amber-700 border-amber-200',
+      color: 'bg-amber-50 text-amber-700 border-amber-300',
       tag: 'Aceleração Visual',
       duration: '2-3 min'
     },
@@ -24,7 +24,7 @@ export const ExercisesView: React.FC<ExercisesViewProps> = ({ onSelectExercise }
       category: 'Supressão Sonora',
       description: 'Derruba o vício de pronunciar cada palavra na mente através de cadência rítmica acelerada.',
       icon: Zap,
-      color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      color: 'bg-emerald-50 text-emerald-700 border-emerald-300',
       tag: 'Eliminar Subvocalização',
       duration: '3-5 min'
     },
@@ -34,7 +34,7 @@ export const ExercisesView: React.FC<ExercisesViewProps> = ({ onSelectExercise }
       category: 'Aceleração Turbo',
       description: 'Apresentação serial rápida que alinha a letra focal da palavra, atingindo até 800 PPM sem esforço.',
       icon: Trophy,
-      color: 'bg-blue-50 text-blue-700 border-blue-200',
+      color: 'bg-blue-50 text-blue-700 border-blue-300',
       tag: 'Sem Saltos Oculares',
       duration: '3-5 min'
     },
@@ -44,7 +44,7 @@ export const ExercisesView: React.FC<ExercisesViewProps> = ({ onSelectExercise }
       category: 'Sintagmas',
       description: 'Treina o cérebro para agrupar 2 a 4 palavras por fixação em colunas estreitas.',
       icon: Layers,
-      color: 'bg-teal-50 text-teal-700 border-teal-200',
+      color: 'bg-teal-50 text-teal-700 border-teal-300',
       tag: 'Fixação Ampla',
       duration: '3-4 min'
     },
@@ -54,7 +54,7 @@ export const ExercisesView: React.FC<ExercisesViewProps> = ({ onSelectExercise }
       category: 'Agilidade Ocular',
       description: 'Exercícios dinâmicos para soltar os músculos que controlam a movimentação dos olhos.',
       icon: MoveHorizontal,
-      color: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+      color: 'bg-indigo-50 text-indigo-700 border-indigo-300',
       tag: 'Alongamento Visual',
       duration: '2 min'
     },
@@ -64,7 +64,7 @@ export const ExercisesView: React.FC<ExercisesViewProps> = ({ onSelectExercise }
       category: 'Aferição Real',
       description: 'Mede suas Palavras Por Minuto (PPM) e valida a retenção através de questionário com textos variados.',
       icon: Award,
-      color: 'bg-purple-50 text-purple-700 border-purple-200',
+      color: 'bg-purple-50 text-purple-700 border-purple-300',
       tag: 'Medição de Progresso',
       duration: '2-3 min'
     }
@@ -73,11 +73,11 @@ export const ExercisesView: React.FC<ExercisesViewProps> = ({ onSelectExercise }
   return (
     <div className="space-y-4 p-4 pb-24 max-w-lg mx-auto text-stone-800">
       <div>
-        <h2 className="text-lg font-black text-stone-900">Catálogo de Exercícios</h2>
-        <p className="text-xs text-stone-500">Escolha uma modalidade para praticar individualmente</p>
+        <h2 className="text-xl font-black text-stone-900 tracking-tight">Catálogo de Exercícios</h2>
+        <p className="text-xs sm:text-sm text-stone-600 font-medium mt-0.5">Escolha uma modalidade para praticar individualmente</p>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-3.5">
         {exercises.map((item) => {
           const Icon = item.icon;
 
@@ -85,33 +85,33 @@ export const ExercisesView: React.FC<ExercisesViewProps> = ({ onSelectExercise }
             <button
               key={item.type}
               onClick={() => onSelectExercise(item.type)}
-              className="w-full text-left bg-white border border-stone-200 hover:border-emerald-500 p-4 rounded-2xl transition-all shadow-xs group relative overflow-hidden active:scale-99"
+              className="w-full text-left bg-white border-2 border-stone-200 hover:border-emerald-500 p-4 sm:p-5 rounded-3xl transition-all shadow-xs group relative overflow-hidden active:scale-98 cursor-pointer"
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3">
-                  <div className={`w-11 h-11 rounded-xl ${item.color} border flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform`}>
-                    <Icon className="w-5 h-5" />
+                <div className="flex items-start gap-3.5">
+                  <div className={`w-12 h-12 rounded-2xl ${item.color} border-2 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform`}>
+                    <Icon className="w-6 h-6" />
                   </div>
 
                   <div>
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
                         {item.category}
                       </span>
-                      <span className="text-[9px] bg-stone-100 text-stone-600 px-1.5 py-0.2 rounded font-mono border border-stone-200">
+                      <span className="text-xs bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-mono font-semibold border border-stone-200">
                         {item.duration}
                       </span>
                     </div>
-                    <h3 className="text-sm font-bold text-stone-900 group-hover:text-emerald-700 transition-colors">
+                    <h3 className="text-base font-bold text-stone-900 group-hover:text-emerald-700 transition-colors">
                       {item.title}
                     </h3>
-                    <p className="text-xs text-stone-500 mt-1 leading-relaxed">
+                    <p className="text-xs sm:text-sm text-stone-600 mt-1 leading-relaxed font-medium">
                       {item.description}
                     </p>
                   </div>
                 </div>
 
-                <div className="w-8 h-8 rounded-lg bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-400 group-hover:bg-emerald-600 group-hover:text-white transition-all shrink-0 mt-1">
+                <div className="w-9 h-9 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-500 group-hover:bg-emerald-600 group-hover:text-white transition-all shrink-0 mt-1">
                   <ArrowRight className="w-4 h-4" />
                 </div>
               </div>

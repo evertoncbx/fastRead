@@ -202,9 +202,9 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
           {/* Card do Texto Selecionado com botão de Randomização */}
           <div className="bg-white p-3.5 rounded-2xl border border-stone-200 flex items-center justify-between text-xs text-stone-600 shadow-xs">
             <div className="pr-2 flex-1">
-              <span className="block text-stone-400 text-[11px] uppercase tracking-wider font-semibold">Texto Selecionado</span>
-              <strong className="text-stone-900 text-sm block leading-snug">{text.title}</strong>
-              <span className="text-[11px] text-emerald-700 font-mono block mt-0.5">{text.wordCount} palavras • ~{text.estimatedMinutes} min</span>
+              <span className="block text-stone-500 text-xs uppercase tracking-wider font-bold">Texto Selecionado</span>
+              <strong className="text-stone-900 text-sm sm:text-base block leading-snug">{text.title}</strong>
+              <span className="text-xs text-emerald-800 font-mono font-bold block mt-0.5">{text.wordCount} palavras • ~{text.estimatedMinutes} min</span>
             </div>
 
             <button
@@ -334,34 +334,34 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
 
             {/* Grid de Métricas */}
             <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className="bg-stone-50 p-3 rounded-2xl border border-stone-200/80">
-                <span className="text-[10px] text-stone-500 uppercase tracking-wider block font-semibold">Compreensão</span>
-                <span className={`text-xl font-black font-mono ${
+              <div className="bg-stone-50 p-3.5 rounded-2xl border-2 border-stone-200">
+                <span className="text-xs text-stone-500 uppercase tracking-wider block font-bold">Compreensão</span>
+                <span className={`text-2xl font-black font-mono ${
                   scoreData.compPercent >= 75 ? 'text-emerald-700' : 'text-amber-700'
                 }`}>
                   {scoreData.compPercent}%
                 </span>
               </div>
 
-              <div className="bg-stone-50 p-3 rounded-2xl border border-stone-200/80">
-                <span className="text-[10px] text-stone-500 uppercase tracking-wider block font-semibold">PPM Eficaz</span>
-                <span className="text-xl font-black font-mono text-emerald-700">
+              <div className="bg-stone-50 p-3.5 rounded-2xl border-2 border-stone-200">
+                <span className="text-xs text-stone-500 uppercase tracking-wider block font-bold">PPM Eficaz</span>
+                <span className="text-2xl font-black font-mono text-emerald-700">
                   {scoreData.effectiveWpm}
                 </span>
               </div>
             </div>
 
             {/* Meta de +50% */}
-            <div className="bg-stone-50 border border-stone-200 p-3.5 rounded-2xl text-left space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-stone-700 font-medium">Meta de Aumento (+50%):</span>
-                <strong className="text-emerald-700 font-mono text-sm">{targetWpm} PPM</strong>
+            <div className="bg-stone-50 border-2 border-stone-200 p-4 rounded-2xl text-left space-y-2">
+              <div className="flex items-center justify-between text-xs sm:text-sm">
+                <span className="text-stone-700 font-bold">Meta de Aumento (+50%):</span>
+                <strong className="text-emerald-700 font-mono text-base font-black">{targetWpm} PPM</strong>
               </div>
 
               {baselineWpm > 0 && !isInitialTest && (
-                <div className="flex items-center justify-between text-xs pt-1 border-t border-stone-200">
-                  <span className="text-stone-500">Evolução desde o início:</span>
-                  <span className={`font-bold font-mono ${percentGain >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                <div className="flex items-center justify-between text-xs sm:text-sm pt-2 border-t border-stone-200">
+                  <span className="text-stone-600 font-medium">Evolução desde o início:</span>
+                  <span className={`font-black font-mono ${percentGain >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
                     {percentGain > 0 ? `+${percentGain}%` : `${percentGain}%`}
                   </span>
                 </div>
@@ -371,34 +371,34 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
 
           {/* Gabarito e Revisão de Retenção */}
           {text.quiz && text.quiz.length > 0 && (
-            <div className="bg-white border border-stone-200 p-4 rounded-3xl text-left space-y-3 shadow-xs">
-              <span className="text-[11px] uppercase tracking-wider text-emerald-800 font-bold block">
+            <div className="bg-white border-2 border-stone-200 p-5 rounded-3xl text-left space-y-3.5 shadow-xs">
+              <span className="text-xs uppercase tracking-wider text-emerald-800 font-black block">
                 Gabarito Comentado & Justificativas
               </span>
-              <div className="space-y-2.5">
+              <div className="space-y-3">
                 {text.quiz.map((q, idx) => {
                   const userAns = answers[q.id];
                   const isCorrect = userAns === q.correctIndex;
 
                   return (
-                    <div key={q.id} className="p-3 rounded-xl bg-stone-50 border border-stone-200/80 text-xs space-y-1.5">
-                      <div className="flex items-start gap-2 font-semibold text-stone-800">
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold shrink-0 mt-0.5 ${
-                          isCorrect ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
+                    <div key={q.id} className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 text-xs sm:text-sm space-y-2">
+                      <div className="flex items-start gap-2 font-bold text-stone-900">
+                        <span className={`text-xs px-2 py-0.5 rounded font-mono font-bold shrink-0 mt-0.5 ${
+                          isCorrect ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-rose-100 text-rose-800 border border-rose-300'
                         }`}>
                           {isCorrect ? '✓ Correto' : '✗ Incorreto'}
                         </span>
                         <span>{idx + 1}. {q.question}</span>
                       </div>
                       {!isCorrect && userAns !== undefined && (
-                        <p className="text-[11px] text-rose-600 pl-2">
+                        <p className="text-xs text-rose-700 font-semibold pl-2">
                           Sua escolha: <span className="line-through">{q.options[userAns]}</span>
                         </p>
                       )}
-                      <p className="text-[11px] text-emerald-700 pl-2 font-medium">
+                      <p className="text-xs text-emerald-800 pl-2 font-bold">
                         Resposta certa: {q.options[q.correctIndex]}
                       </p>
-                      <p className="text-[11px] text-stone-500 italic pl-2 border-l-2 border-emerald-500/40 mt-1">
+                      <p className="text-xs text-stone-600 italic pl-2 border-l-2 border-emerald-500/50 mt-1 leading-relaxed">
                         {q.explanation}
                       </p>
                     </div>

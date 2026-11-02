@@ -71,6 +71,18 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
     };
   }, [words, currentIndex]);
 
+  // Calcula a escala da fonte dinamicamente para que palavras longas (ex: "confidenciou-me") nunca quebrem ou estourem o visor
+  const currentWordLength = useMemo(() => {
+    return (currentWordParts.prefix + currentWordParts.orp + currentWordParts.suffix).length;
+  }, [currentWordParts]);
+
+  const orpFontSizeClass = useMemo(() => {
+    if (currentWordLength <= 7) return 'text-3xl sm:text-4xl';
+    if (currentWordLength <= 11) return 'text-2xl sm:text-3xl';
+    if (currentWordLength <= 15) return 'text-xl sm:text-2xl';
+    return 'text-lg sm:text-xl';
+  }, [currentWordLength]);
+
   const getWordDelay = (word: string) => {
     const baseDelay = (60 / wpmRef.current) * 1000;
     if (/[.?!]$/.test(word)) {
@@ -213,9 +225,9 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
       </div>
 
       {/* Seletor de Textos */}
-      <div className="mb-3 bg-white border border-stone-200 p-2.5 rounded-xl shadow-xs">
-        <label className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold block mb-1.5 flex items-center gap-1.5">
-          <BookOpen className="w-3.5 h-3.5 text-emerald-600" />
+      <div className="mb-3.5 bg-white border-2 border-stone-200 p-3.5 rounded-2xl shadow-xs">
+        <label className="text-xs uppercase tracking-wider text-stone-600 font-bold block mb-1.5 flex items-center gap-2">
+          <BookOpen className="w-4 h-4 text-emerald-600" />
           Obra em Domínio Público:
         </label>
         <select
@@ -236,32 +248,32 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
       </div>
 
       {/* Visor RSVP (Optimal Recognition Point / ORP Visualizer) */}
-      <div className="relative bg-white border-2 border-stone-200 rounded-3xl p-8 mb-4 shadow-xs flex flex-col items-center justify-center min-h-[190px] overflow-hidden">
+      <div className="relative bg-white border-2 border-stone-200 rounded-3xl py-8 px-3 sm:px-6 mb-4 shadow-xs flex flex-col items-center justify-center min-h-[190px] overflow-hidden">
         {/* Guias verticais de alinhamento óptico */}
         <div className="absolute top-2 left-1/2 -translate-x-1/2 w-0.5 h-4 bg-rose-500 rounded-full" />
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-0.5 h-4 bg-rose-500 rounded-full" />
 
         {/* Linha guia foveal sutil */}
-        <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 h-[1px] bg-stone-200 pointer-events-none" />
+        <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 h-[1px] bg-stone-200 pointer-events-none" />
 
-        {/* Container da Palavra com Alinhamento Estrito no ORP */}
-        <div className="relative z-10 flex items-center justify-center w-full font-mono text-3xl sm:text-4xl select-none">
-          <div className="w-1/2 text-right text-stone-900 font-medium tracking-normal pr-[2px]">
+        {/* Container da Palavra com Alinhamento Estrito no ORP sem quebra de linha */}
+        <div className={`relative z-10 flex items-center justify-center w-full font-mono ${orpFontSizeClass} select-none whitespace-nowrap`}>
+          <div className="w-1/2 text-right text-stone-900 font-medium tracking-normal pr-[2px] whitespace-nowrap overflow-visible">
             {currentWordParts.prefix}
           </div>
 
-          <div className="text-rose-600 font-black scale-110 px-[2px] bg-rose-50 rounded-md">
+          <div className="text-rose-600 font-black scale-110 px-1 bg-rose-50 rounded-md shrink-0 whitespace-nowrap">
             {currentWordParts.orp}
           </div>
 
-          <div className="w-1/2 text-left text-stone-900 font-medium tracking-normal pl-[2px]">
+          <div className="w-1/2 text-left text-stone-900 font-medium tracking-normal pl-[2px] whitespace-nowrap overflow-visible">
             {currentWordParts.suffix}
           </div>
         </div>
 
         {/* Progresso de Palavras */}
-        <div className="absolute bottom-2.5 left-4 right-4 flex items-center justify-between text-[11px] font-mono text-stone-400">
-          <span>{currentIndex + 1} de {words.length} pal.</span>
+        <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-xs font-mono font-bold text-stone-500">
+          <span>{currentIndex + 1} de {words.length} palavras</span>
           <span>{progressPercentage}%</span>
         </div>
 

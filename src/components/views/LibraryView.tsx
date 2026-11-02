@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, Zap, Trophy, Award, Layers, Plus, FileText } from 'lucide-react';
+import { BookOpen, Zap, Trophy, Award, Layers, Plus, FileText, X } from 'lucide-react';
 import { ReadingText, ExerciseType } from '../../types';
 import { READING_LIBRARY } from '../../data/texts';
 
@@ -39,13 +39,13 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectTextForExercis
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-black text-stone-900">Biblioteca Nacional PT-BR</h2>
-          <p className="text-xs text-stone-500">Obras clássicas em domínio público e ensaios de cognição</p>
+          <h2 className="text-xl font-black text-stone-900 tracking-tight">Biblioteca Nacional PT-BR</h2>
+          <p className="text-xs sm:text-sm text-stone-600 font-medium mt-0.5">Obras clássicas e ensaios de cognição</p>
         </div>
 
         <button
           onClick={() => setShowCustomModal(true)}
-          className="flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all"
+          className="flex items-center gap-2 py-2.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-bold text-xs sm:text-sm shadow-xs border-b-2 border-emerald-800 transition-all cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Colar Texto</span>
@@ -53,7 +53,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectTextForExercis
       </div>
 
       {/* Filtros de Categoria */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+      <div className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-none">
         {[
           { id: 'todos', label: 'Todos' },
           { id: 'conto', label: 'Contos Clássicos' },
@@ -64,10 +64,10 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectTextForExercis
           <button
             key={cat.id}
             onClick={() => setSelectedCategory(cat.id)}
-            className={`py-1.5 px-3 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+            className={`py-2 px-3.5 rounded-2xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${
               selectedCategory === cat.id
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'bg-white text-stone-600 hover:text-stone-900 border border-stone-200'
+                ? 'bg-emerald-600 text-white shadow-xs border-b-2 border-emerald-800'
+                : 'bg-white text-stone-600 hover:text-stone-900 border-2 border-stone-200'
             }`}
           >
             {cat.label}
@@ -76,60 +76,60 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectTextForExercis
       </div>
 
       {/* Lista de Textos */}
-      <div className="space-y-3">
+      <div className="space-y-3.5">
         {filtered.map((item) => (
           <div
             key={item.id}
-            className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs space-y-3"
+            className="bg-white border-2 border-stone-200 rounded-3xl p-4 sm:p-5 shadow-xs space-y-3 hover:border-emerald-400 transition-colors"
           >
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-200">
                   {item.category}
                 </span>
-                <span className="text-[10px] text-stone-500 font-mono">
+                <span className="text-xs text-stone-500 font-mono font-semibold">
                   {item.wordCount} palavras • ~{item.estimatedMinutes} min
                 </span>
               </div>
-              <h3 className="text-sm font-bold text-stone-900">{item.title}</h3>
-              <p className="text-xs text-stone-500 italic mt-0.5">Autor: {item.author}</p>
-              <p className="text-xs text-stone-600 mt-2 leading-relaxed">
+              <h3 className="text-base font-bold text-stone-900">{item.title}</h3>
+              <p className="text-xs sm:text-sm text-stone-500 font-medium italic mt-0.5">Autor: {item.author}</p>
+              <p className="text-xs sm:text-sm text-stone-600 mt-2 leading-relaxed font-medium">
                 {item.description}
               </p>
             </div>
 
             {/* Ações de Leitura Dinâmica para esta obra */}
-            <div className="pt-2 border-t border-stone-100 flex flex-wrap gap-1.5">
+            <div className="pt-3 border-t-2 border-stone-100 flex flex-wrap gap-2">
               <button
                 onClick={() => onSelectTextForExercise(item, 'rsvp')}
-                className="py-1.5 px-2.5 rounded-lg bg-stone-50 hover:bg-blue-50 border border-stone-200 hover:border-blue-300 text-[11px] font-semibold text-blue-700 flex items-center gap-1 transition-colors"
+                className="py-2 px-3 rounded-xl bg-stone-50 hover:bg-blue-50 border-2 border-stone-200 hover:border-blue-300 text-xs sm:text-sm font-bold text-blue-700 flex items-center gap-1.5 transition-colors cursor-pointer"
               >
-                <Trophy className="w-3.5 h-3.5" />
+                <Trophy className="w-4 h-4" />
                 <span>Leitor RSVP</span>
               </button>
 
               <button
                 onClick={() => onSelectTextForExercise(item, 'metronome')}
-                className="py-1.5 px-2.5 rounded-lg bg-stone-50 hover:bg-emerald-50 border border-stone-200 hover:border-emerald-300 text-[11px] font-semibold text-emerald-700 flex items-center gap-1 transition-colors"
+                className="py-2 px-3 rounded-xl bg-stone-50 hover:bg-emerald-50 border-2 border-stone-200 hover:border-emerald-300 text-xs sm:text-sm font-bold text-emerald-700 flex items-center gap-1.5 transition-colors cursor-pointer"
               >
-                <Zap className="w-3.5 h-3.5" />
+                <Zap className="w-4 h-4" />
                 <span>Metrônomo</span>
               </button>
 
               <button
                 onClick={() => onSelectTextForExercise(item, 'chunking')}
-                className="py-1.5 px-2.5 rounded-lg bg-stone-50 hover:bg-teal-50 border border-stone-200 hover:border-teal-300 text-[11px] font-semibold text-teal-700 flex items-center gap-1 transition-colors"
+                className="py-2 px-3 rounded-xl bg-stone-50 hover:bg-teal-50 border-2 border-stone-200 hover:border-teal-300 text-xs sm:text-sm font-bold text-teal-700 flex items-center gap-1.5 transition-colors cursor-pointer"
               >
-                <Layers className="w-3.5 h-3.5" />
+                <Layers className="w-4 h-4" />
                 <span>Em Blocos</span>
               </button>
 
               {item.quiz && item.quiz.length > 0 && (
                 <button
                   onClick={() => onSelectTextForExercise(item, 'assessment')}
-                  className="py-1.5 px-2.5 rounded-lg bg-purple-50 hover:bg-purple-100 border border-purple-200 text-[11px] font-semibold text-purple-700 flex items-center gap-1 transition-colors"
+                  className="py-2 px-3 rounded-xl bg-purple-50 hover:bg-purple-100 border-2 border-purple-200 text-xs sm:text-sm font-bold text-purple-700 flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
-                  <Award className="w-3.5 h-3.5" />
+                  <Award className="w-4 h-4" />
                   <span>Teste + Quiz</span>
                 </button>
               )}
@@ -140,23 +140,23 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectTextForExercis
 
       {/* Modal para Colar Texto Próprio */}
       {showCustomModal && (
-        <div className="fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border border-stone-200 rounded-3xl max-w-md w-full p-5 shadow-2xl space-y-4 text-stone-800">
+        <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border-2 border-stone-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-stone-800 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-stone-900 flex items-center gap-2">
-                <FileText className="w-4 h-4 text-emerald-600" />
+              <h3 className="text-base font-black text-stone-900 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-emerald-600" />
                 Treinar com Texto Próprio
               </h3>
               <button
                 onClick={() => setShowCustomModal(false)}
-                className="text-stone-400 hover:text-stone-700 text-xs"
+                className="p-1 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
               >
-                Cancelar
+                <X className="w-5 h-5" />
               </button>
             </div>
 
             <div>
-              <label className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold block mb-1">
+              <label className="text-xs uppercase tracking-wider text-stone-600 font-bold block mb-1.5">
                 Título do Artigo / Matéria
               </label>
               <input
@@ -164,12 +164,12 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectTextForExercis
                 placeholder="Ex: Artigo de Trabalho / Notícia"
                 value={customTitle}
                 onChange={(e) => setCustomTitle(e.target.value)}
-                className="w-full bg-stone-50 border border-stone-200 rounded-xl py-2 px-3 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-emerald-500"
+                className="w-full bg-stone-50 border-2 border-stone-200 rounded-2xl py-3 px-4 text-sm sm:text-base text-stone-900 font-medium focus:bg-white focus:outline-none focus:border-emerald-600 transition-colors"
               />
             </div>
 
             <div>
-              <label className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold block mb-1">
+              <label className="text-xs uppercase tracking-wider text-stone-600 font-bold block mb-1.5">
                 Conteúdo do Texto
               </label>
               <textarea
@@ -177,39 +177,39 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onSelectTextForExercis
                 placeholder="Cole aqui o texto que você deseja ler de forma dinâmica..."
                 value={customTextContent}
                 onChange={(e) => setCustomTextContent(e.target.value)}
-                className="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-emerald-500 font-sans"
+                className="w-full bg-stone-50 border-2 border-stone-200 rounded-2xl p-4 text-sm sm:text-base text-stone-900 focus:bg-white focus:outline-none focus:border-emerald-600 font-sans font-medium transition-colors"
               />
             </div>
 
             <div className="pt-2">
-              <span className="text-[11px] text-stone-500 font-medium block mb-2">
+              <span className="text-xs uppercase tracking-wider text-stone-600 font-bold block mb-2.5">
                 Escolha o modo de treinamento:
               </span>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-2.5">
                 <button
                   disabled={!customTextContent.trim()}
                   onClick={() => handleStartCustomText('rsvp')}
-                  className="py-2.5 px-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-bold text-xs flex items-center justify-center gap-1"
+                  className="py-3 px-3 rounded-2xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm border-b-2 border-blue-800 transition-all cursor-pointer active:scale-98"
                 >
-                  <Trophy className="w-3.5 h-3.5" />
+                  <Trophy className="w-4 h-4" />
                   <span>RSVP</span>
                 </button>
 
                 <button
                   disabled={!customTextContent.trim()}
                   onClick={() => handleStartCustomText('metronome')}
-                  className="py-2.5 px-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold text-xs flex items-center justify-center gap-1"
+                  className="py-3 px-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm border-b-2 border-emerald-800 transition-all cursor-pointer active:scale-98"
                 >
-                  <Zap className="w-3.5 h-3.5" />
+                  <Zap className="w-4 h-4" />
                   <span>Metrônomo</span>
                 </button>
 
                 <button
                   disabled={!customTextContent.trim()}
                   onClick={() => handleStartCustomText('chunking')}
-                  className="py-2.5 px-2 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-40 text-white font-bold text-xs flex items-center justify-center gap-1"
+                  className="py-3 px-3 rounded-2xl bg-teal-600 hover:bg-teal-700 disabled:opacity-40 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm border-b-2 border-teal-800 transition-all cursor-pointer active:scale-98"
                 >
-                  <Layers className="w-3.5 h-3.5" />
+                  <Layers className="w-4 h-4" />
                   <span>Blocos</span>
                 </button>
               </div>

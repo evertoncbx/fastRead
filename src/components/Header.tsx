@@ -30,58 +30,59 @@ export const Header: React.FC<HeaderProps> = ({ user, onOpenGuide, onLogout }) =
 
   return (
     <>
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b-2 border-stone-200 px-4 py-3">
-        <div className="max-w-lg mx-auto flex items-center justify-between">
+      <header className="sticky top-0 z-30 w-full bg-white/95 backdrop-blur-md border-b-2 border-stone-200 px-3 sm:px-4 py-2 sm:py-3 overflow-hidden">
+        <div className="max-w-lg mx-auto flex items-center justify-between gap-1 sm:gap-2">
           {/* Logo & Marca */}
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-[#58CC02] border-b-4 border-[#46A302] flex items-center justify-center text-white shadow-sm shrink-0">
-              <BookOpen className="w-7 h-7 stroke-[2.5]" />
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0 min-w-0">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-[#58CC02] border-b-4 border-[#46A302] flex items-center justify-center text-white shadow-sm shrink-0">
+              <BookOpen className="w-5 h-5 sm:w-7 sm:h-7 stroke-[2.5]" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-black tracking-tight text-[#131F24]">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#131F24]">
                   LEITOX
                 </h1>
-                <span className="text-xs sm:text-sm bg-[#FFC800] text-[#7A5000] border-2 border-[#E5A500] px-2.5 py-0.5 rounded-full font-black">
+                <span className="text-[10px] sm:text-xs bg-[#FFC800] text-[#7A5000] border-2 border-[#E5A500] px-1.5 sm:px-2 py-0.5 rounded-full font-black">
                   +50%
                 </span>
               </div>
-              <p className="text-sm text-stone-500 font-extrabold">
+              <p className="text-xs sm:text-sm text-stone-500 font-extrabold truncate max-w-[85px] sm:max-w-none">
                 {user ? `Olá, ${user.name.split(' ')[0]}!` : 'Treino Diário'}
               </p>
             </div>
           </div>
 
           {/* Indicadores & Ações */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {user && (
               <>
                 {/* Contador de Dias / Streak */}
                 <div
                   title="Dias Seguidos de Treino"
-                  className="flex items-center gap-1.5 bg-[#FFF8D9] border-2 border-[#FFE680] border-b-4 border-b-[#E5A500] px-3.5 py-1.5 rounded-2xl text-[#B8860B] text-base font-black"
+                  className="flex items-center gap-1 bg-[#FFF8D9] border-2 border-[#FFE680] border-b-4 border-b-[#E5A500] px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl text-[#B8860B] text-xs sm:text-base font-black shrink-0"
                 >
-                  <Flame className="w-6 h-6 fill-[#FF9600] text-[#FF9600]" />
+                  <Flame className="w-4 h-4 sm:w-5 sm:h-5 fill-[#FF9600] text-[#FF9600]" />
                   <span>{user.streakDays}</span>
                 </div>
 
                 {/* Velocidade Atual */}
                 <div
                   title="Sua Velocidade Atual"
-                  className="flex items-center gap-1.5 bg-stone-100 border-2 border-stone-200 border-b-4 border-b-stone-300 px-3.5 py-1.5 rounded-2xl text-[#131F24] text-base font-black"
+                  className="flex items-center gap-1 bg-stone-100 border-2 border-stone-200 border-b-4 border-b-stone-300 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl text-[#131F24] text-xs sm:text-base font-black shrink-0"
                 >
-                  <Zap className="w-5 h-5 text-[#58CC02] fill-[#58CC02]" />
+                  <Zap className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-[#58CC02] fill-[#58CC02]" />
                   <span>{user.currentWpm}</span>
-                  <span className="text-xs text-stone-400 font-black">PPM</span>
+                  <span className="text-[10px] sm:text-xs text-stone-400 font-black">PPM</span>
                 </div>
 
                 {/* Sincronização */}
                 <button
                   onClick={() => setShowSyncModal(true)}
+                  aria-label="Sincronizar Dispositivos"
                   title="Sincronizar Dispositivos"
-                  className="p-2.5 rounded-2xl bg-white border-2 border-stone-200 border-b-4 border-b-stone-300 hover:bg-stone-50 text-stone-600 hover:text-[#1CB0F6] transition-all cursor-pointer active:border-b-2 active:translate-y-[2px]"
+                  className="p-1.5 sm:p-2.5 rounded-xl sm:rounded-2xl bg-white border-2 border-stone-200 border-b-4 border-b-stone-300 hover:bg-stone-50 text-stone-600 hover:text-[#1CB0F6] transition-all cursor-pointer active:border-b-2 active:translate-y-[2px] shrink-0"
                 >
-                  <Cloud className="w-5 h-5 stroke-[2.5]" />
+                  <Cloud className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
                 </button>
               </>
             )}
@@ -89,10 +90,11 @@ export const Header: React.FC<HeaderProps> = ({ user, onOpenGuide, onLogout }) =
             {/* Guia Rápido */}
             <button
               onClick={onOpenGuide}
+              aria-label="Como Funciona o Treino"
               title="Como Funciona o Treino"
-              className="p-2.5 rounded-2xl bg-white border-2 border-stone-200 border-b-4 border-b-stone-300 hover:bg-stone-50 text-stone-600 hover:text-stone-900 transition-all cursor-pointer active:border-b-2 active:translate-y-[2px]"
+              className="p-1.5 sm:p-2.5 rounded-xl sm:rounded-2xl bg-white border-2 border-stone-200 border-b-4 border-b-stone-300 hover:bg-stone-50 text-stone-600 hover:text-stone-900 transition-all cursor-pointer active:border-b-2 active:translate-y-[2px] shrink-0"
             >
-              <HelpCircle className="w-5 h-5 stroke-[2.5]" />
+              <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
             </button>
           </div>
         </div>

@@ -300,7 +300,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F7F7] text-[#131F24] flex flex-col font-sans">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#F7F7F7] text-[#131F24] flex flex-col font-sans">
       {/* Modal de Cadastro / Restauração Multi-Dispositivo */}
       <AuthModal
         isOpen={user === null}

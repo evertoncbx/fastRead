@@ -1,10 +1,14 @@
 ---
-name: fastread-guidelines
-description: Diretrizes de UX minimalista, ergonomia tipográfica e higiene de armazenamento e Supabase.
+name: superleitura-guidelines
+description: Diretrizes de UX minimalista, identidade visual Super Leitura e higiene de armazenamento e Supabase.
 always_on: true
 ---
 
-# DIRETRIZES DE UX, TIPOGRAFIA E ARQUITETURA DE ARMAZENAMENTO
+# DIRETRIZES DE IDENTIDADE, UX, TIPOGRAFIA E ARMAZENAMENTO (SUPER LEITURA)
+
+- **Nome Oficial da Aplicação:** Super Leitura
+- **Domínio Oficial de Produção (Vercel):** https://superleitura.vercel.app
+- **Repositório GitHub:** https://github.com/evertoncbx/fastRead
 
 Ao desenvolver, revisar ou refatorar funcionalidades nesta aplicação, siga rigorosamente os princípios abaixo:
 

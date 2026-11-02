@@ -147,27 +147,27 @@ export const SchulteTable: React.FC<SchulteTableProps> = ({ onComplete, onBack, 
 
       {/* Status Bar */}
       <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="bg-white border border-stone-200 p-3 rounded-xl flex items-center justify-between shadow-xs">
+        <div className="bg-white border-2 border-stone-200 p-3.5 rounded-2xl flex items-center justify-between shadow-xs">
           <div>
-            <span className="text-[11px] uppercase tracking-wider text-stone-500 block font-semibold">Próximo Alvo</span>
+            <span className="text-xs uppercase tracking-wider text-stone-600 block font-bold mb-0.5">Próximo Alvo</span>
             <span className="text-2xl font-black text-emerald-700 font-mono">
               {isFinished ? '✓ CONCLUÍDO' : `${currentExpected} / ${totalNumbers}`}
             </span>
           </div>
-          <div className="w-10 h-10 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center font-black text-emerald-700 text-lg">
+          <div className="w-11 h-11 rounded-2xl bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center font-black text-emerald-700 text-xl">
             {currentExpected <= totalNumbers ? currentExpected : '★'}
           </div>
         </div>
 
-        <div className="bg-white border border-stone-200 p-3 rounded-xl flex items-center justify-between shadow-xs">
+        <div className="bg-white border-2 border-stone-200 p-3.5 rounded-2xl flex items-center justify-between shadow-xs">
           <div>
-            <span className="text-[11px] uppercase tracking-wider text-stone-500 block font-semibold">Tempo Decorrido</span>
+            <span className="text-xs uppercase tracking-wider text-stone-600 block font-bold mb-0.5">Tempo Decorrido</span>
             <span className="text-2xl font-black text-stone-900 font-mono">
               {elapsedTime.toFixed(1)}s
             </span>
           </div>
-          <div className="w-10 h-10 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-600">
-            <RotateCcw className="w-4 h-4" />
+          <div className="w-11 h-11 rounded-2xl bg-stone-100 border-2 border-stone-200 flex items-center justify-center text-stone-600">
+            <RotateCcw className="w-5 h-5" />
           </div>
         </div>
       </div>
@@ -264,15 +264,15 @@ export const SchulteTable: React.FC<SchulteTableProps> = ({ onComplete, onBack, 
             <h3 className="text-lg font-extrabold text-stone-900 mb-1">Excelente Foco Visual!</h3>
             <p className="text-xs text-stone-500 mb-3">Tabela {gridSize}x{gridSize} concluída com sucesso.</p>
 
-            <div className="bg-stone-50 border border-stone-200 py-3 px-6 rounded-xl mb-4 text-center">
-              <span className="text-[11px] text-stone-500 uppercase tracking-wider block font-medium">Tempo Total</span>
+            <div className="bg-stone-50 border-2 border-stone-200 py-3.5 px-6 rounded-2xl mb-4 text-center">
+              <span className="text-xs text-stone-500 uppercase tracking-wider block font-bold mb-1">Tempo Total</span>
               <span className="text-3xl font-black text-emerald-700 font-mono">{elapsedTime.toFixed(1)}s</span>
             </div>
 
-            <div className="flex gap-2 w-full max-w-xs">
+            <div className="flex gap-3 w-full max-w-xs">
               <button
                 onClick={handleStart}
-                className="flex-1 py-3 px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all"
+                className="flex-1 py-3.5 px-4 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 border-2 border-stone-200 transition-all cursor-pointer active:scale-98"
               >
                 <RotateCcw className="w-4 h-4" />
                 <span>Repetir</span>
@@ -280,7 +280,7 @@ export const SchulteTable: React.FC<SchulteTableProps> = ({ onComplete, onBack, 
               {onComplete && (
                 <button
                   onClick={() => onComplete(Number(elapsedTime.toFixed(2)))}
-                  className="flex-1 py-3 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all"
+                  className="flex-1 py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md border-b-4 border-emerald-800 transition-all cursor-pointer active:scale-98"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>Avançar</span>

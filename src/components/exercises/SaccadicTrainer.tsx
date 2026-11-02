@@ -111,13 +111,13 @@ export const SaccadicTrainer: React.FC<SaccadicTrainerProps> = ({ onComplete, on
 
       {/* Status Bar */}
       <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="bg-white border border-stone-200 p-3 rounded-xl shadow-xs">
-          <span className="text-[11px] uppercase tracking-wider text-stone-500 block font-semibold">Saltos Concluídos</span>
+        <div className="bg-white border-2 border-stone-200 p-3.5 rounded-2xl shadow-xs">
+          <span className="text-xs uppercase tracking-wider text-stone-600 block font-bold mb-1">Saltos Concluídos</span>
           <span className="text-2xl font-black text-indigo-700 font-mono">{jumpsCount} / {targetJumps}</span>
         </div>
 
-        <div className="bg-white border border-stone-200 p-3 rounded-xl shadow-xs">
-          <span className="text-[11px] uppercase tracking-wider text-stone-500 block font-semibold">Intervalo de Salto</span>
+        <div className="bg-white border-2 border-stone-200 p-3.5 rounded-2xl shadow-xs">
+          <span className="text-xs uppercase tracking-wider text-stone-600 block font-bold mb-1">Intervalo de Salto</span>
           <span className="text-2xl font-black text-stone-900 font-mono">{speedMs}ms</span>
         </div>
       </div>
@@ -182,10 +182,10 @@ export const SaccadicTrainer: React.FC<SaccadicTrainerProps> = ({ onComplete, on
       </div>
 
       {/* Controles de Intervalo */}
-      <div className="bg-white border border-stone-200 p-3.5 rounded-xl mb-4 shadow-xs">
-        <div className="flex justify-between text-xs text-stone-600 mb-1">
+      <div className="bg-white border-2 border-stone-200 p-4 rounded-2xl mb-4 shadow-xs">
+        <div className="flex justify-between text-xs sm:text-sm font-bold text-stone-700 mb-2">
           <span>Ritmo do Salto</span>
-          <span>{speedMs}ms</span>
+          <span className="font-mono text-indigo-700">{speedMs}ms</span>
         </div>
         <input
           type="range"
@@ -195,23 +195,23 @@ export const SaccadicTrainer: React.FC<SaccadicTrainerProps> = ({ onComplete, on
           value={speedMs}
           disabled={isPlaying}
           onChange={(e) => setSpeedMs(Number(e.target.value))}
-          className="w-full accent-indigo-600 bg-stone-100 h-2 rounded-lg cursor-pointer"
+          className="w-full accent-indigo-600 bg-stone-100 h-2.5 rounded-lg cursor-pointer"
         />
-        <div className="flex justify-between text-[10px] text-stone-400 font-mono mt-1">
+        <div className="flex justify-between text-xs text-stone-500 font-mono font-bold mt-2">
           <span>Rápido (250ms)</span>
           <span>Médio (450ms)</span>
           <span>Moderado (700ms)</span>
         </div>
       </div>
 
-      {/* Botões de Ação */}
-      <div className="flex gap-2">
+      {/* Botões de Ação Estilo Duolingo */}
+      <div className="flex gap-3">
         <button
           onClick={isPlaying ? handleStop : handleStart}
-          className={`flex-1 py-3.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-xs ${
+          className={`flex-1 py-4 px-5 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2.5 transition-all shadow-md border-b-4 cursor-pointer active:scale-98 ${
             isPlaying
-              ? 'bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-200'
-              : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+              ? 'bg-stone-100 hover:bg-stone-200 text-stone-800 border-stone-300'
+              : 'bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-800'
           }`}
         >
           {isPlaying ? (
@@ -222,7 +222,7 @@ export const SaccadicTrainer: React.FC<SaccadicTrainerProps> = ({ onComplete, on
           ) : (
             <>
               <Play className="w-5 h-5 fill-current" />
-              <span>{jumpsCount > 0 ? 'Retomar' : 'Iniciar Treino'}</span>
+              <span>{jumpsCount > 0 ? 'Retomar Treino' : 'Iniciar Treino'}</span>
             </>
           )}
         </button>
@@ -230,7 +230,7 @@ export const SaccadicTrainer: React.FC<SaccadicTrainerProps> = ({ onComplete, on
         <button
           onClick={handleReset}
           aria-label="Reiniciar"
-          className="p-3.5 rounded-xl bg-white border border-stone-200 text-stone-600 hover:text-stone-900 hover:bg-stone-50 transition-colors shadow-2xs"
+          className="p-4 rounded-2xl bg-white border-2 border-stone-200 text-stone-700 hover:text-stone-900 hover:bg-stone-50 transition-colors shadow-xs cursor-pointer active:scale-98"
         >
           <RotateCcw className="w-5 h-5" />
         </button>

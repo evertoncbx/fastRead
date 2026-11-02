@@ -325,29 +325,29 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
           className="w-full accent-emerald-600 bg-stone-100 h-2 rounded-lg cursor-pointer"
         />
 
-        <div className="flex justify-between text-[10px] text-stone-400 font-mono mt-1">
+        <div className="flex justify-between text-xs text-stone-500 font-mono font-bold mt-2">
           <span>200 PPM (Médio)</span>
           <span>450 PPM (Avançado)</span>
           <span>800 PPM (Turbo)</span>
         </div>
       </div>
 
-      {/* Botões de Navegação e Reprodução */}
-      <div className="flex items-center justify-center gap-3">
+      {/* Botões de Navegação e Reprodução Estilo Duolingo */}
+      <div className="flex items-center justify-center gap-2.5">
         <button
           onClick={() => handleJump(-10)}
           aria-label="Voltar 10 palavras"
-          className="p-3.5 rounded-xl bg-white border border-stone-200 text-stone-600 hover:text-stone-900 shadow-2xs transition-colors"
+          className="p-3.5 rounded-2xl bg-white border-2 border-stone-200 text-stone-700 hover:text-stone-900 shadow-xs active:scale-98 transition-all cursor-pointer"
         >
           <Rewind className="w-5 h-5" />
         </button>
 
         <button
           onClick={isPlaying ? handlePause : handlePlay}
-          className={`flex-1 py-4 px-6 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-xs transition-all ${
+          className={`flex-1 py-4 px-6 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-md border-b-4 transition-all cursor-pointer active:scale-98 ${
             isPlaying
-              ? 'bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-200'
-              : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+              ? 'bg-stone-100 hover:bg-stone-200 text-stone-800 border-stone-300'
+              : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-800'
           }`}
         >
           {isPlaying ? (
@@ -358,7 +358,7 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
           ) : (
             <>
               <Play className="w-5 h-5 fill-current" />
-              <span>{currentIndex > 0 ? 'Continuar Leitura' : 'Iniciar RSVP'}</span>
+              <span>{currentIndex > 0 ? 'Continuar Leitura' : 'Iniciar Leitura'}</span>
             </>
           )}
         </button>
@@ -366,7 +366,7 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
         <button
           onClick={() => handleJump(10)}
           aria-label="Avançar 10 palavras"
-          className="p-3.5 rounded-xl bg-white border border-stone-200 text-stone-600 hover:text-stone-900 shadow-2xs transition-colors"
+          className="p-3.5 rounded-2xl bg-white border-2 border-stone-200 text-stone-700 hover:text-stone-900 shadow-xs active:scale-98 transition-all cursor-pointer"
         >
           <FastForward className="w-5 h-5" />
         </button>
@@ -374,7 +374,7 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
         <button
           onClick={handleReset}
           aria-label="Reiniciar leitura"
-          className="p-3.5 rounded-xl bg-white border border-stone-200 text-stone-600 hover:text-stone-900 shadow-2xs transition-colors"
+          className="p-3.5 rounded-2xl bg-white border-2 border-stone-200 text-stone-700 hover:text-stone-900 shadow-xs active:scale-98 transition-all cursor-pointer"
         >
           <RotateCcw className="w-5 h-5" />
         </button>

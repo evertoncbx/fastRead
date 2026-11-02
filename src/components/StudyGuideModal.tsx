@@ -19,8 +19,8 @@ export const StudyGuideModal: React.FC<StudyGuideModalProps> = ({ isOpen, onClos
               <Brain className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-black text-stone-900">Guia Científico & Métodos</h2>
-              <p className="text-[10px] text-stone-500">Fundamentos da Leitura Dinâmica & Retenção Cognitiva</p>
+              <h2 className="text-base font-black text-stone-900">Guia Científico & Métodos</h2>
+              <p className="text-xs text-stone-500 font-medium">Fundamentos da Leitura Dinâmica & Retenção Cognitiva</p>
             </div>
           </div>
           <button
@@ -93,31 +93,31 @@ export const StudyGuideModal: React.FC<StudyGuideModalProps> = ({ isOpen, onClos
               <Eye className="w-4 h-4 text-amber-700" />
               A Jornada Diária de 15 a 20 Minutos
             </h3>
-            <div className="grid grid-cols-5 gap-1.5 text-center pt-1 font-mono text-[10px]">
-              <div className="bg-white p-1.5 rounded-lg border border-stone-200">
-                <span className="block text-stone-400">Passo 1</span>
-                <strong className="text-amber-700">Schulte</strong>
-                <span className="block text-stone-500 text-[9px]">3 min</span>
+            <div className="grid grid-cols-5 gap-1.5 text-center pt-1 font-mono text-xs">
+              <div className="bg-white p-2 rounded-xl border border-stone-200">
+                <span className="block text-stone-400 font-bold text-[11px]">Passo 1</span>
+                <strong className="text-amber-700 text-xs font-black block">Schulte</strong>
+                <span className="block text-stone-500 text-[11px] font-bold">3 min</span>
               </div>
-              <div className="bg-white p-1.5 rounded-lg border border-stone-200">
-                <span className="block text-stone-400">Passo 2</span>
-                <strong className="text-emerald-700">Metrônomo</strong>
-                <span className="block text-stone-500 text-[9px]">5 min</span>
+              <div className="bg-white p-2 rounded-xl border border-stone-200">
+                <span className="block text-stone-400 font-bold text-[11px]">Passo 2</span>
+                <strong className="text-emerald-700 text-xs font-black block">Metrônomo</strong>
+                <span className="block text-stone-500 text-[11px] font-bold">5 min</span>
               </div>
-              <div className="bg-white p-1.5 rounded-lg border border-stone-200">
-                <span className="block text-stone-400">Passo 3</span>
-                <strong className="text-blue-700">RSVP</strong>
-                <span className="block text-stone-500 text-[9px]">5 min</span>
+              <div className="bg-white p-2 rounded-xl border border-stone-200">
+                <span className="block text-stone-400 font-bold text-[11px]">Passo 3</span>
+                <strong className="text-blue-700 text-xs font-black block">RSVP</strong>
+                <span className="block text-stone-500 text-[11px] font-bold">5 min</span>
               </div>
-              <div className="bg-white p-1.5 rounded-lg border border-stone-200">
-                <span className="block text-stone-400">Passo 4</span>
-                <strong className="text-teal-700">Blocos</strong>
-                <span className="block text-stone-500 text-[9px]">4 min</span>
+              <div className="bg-white p-2 rounded-xl border border-stone-200">
+                <span className="block text-stone-400 font-bold text-[11px]">Passo 4</span>
+                <strong className="text-teal-700 text-xs font-black block">Blocos</strong>
+                <span className="block text-stone-500 text-[11px] font-bold">4 min</span>
               </div>
-              <div className="bg-white p-1.5 rounded-lg border border-stone-200">
-                <span className="block text-stone-400">Passo 5</span>
-                <strong className="text-purple-700">Aferição</strong>
-                <span className="block text-stone-500 text-[9px]">3 min</span>
+              <div className="bg-white p-2 rounded-xl border border-stone-200">
+                <span className="block text-stone-400 font-bold text-[11px]">Passo 5</span>
+                <strong className="text-purple-700 text-xs font-black block">Aferição</strong>
+                <span className="block text-stone-500 text-[11px] font-bold">3 min</span>
               </div>
             </div>
           </div>

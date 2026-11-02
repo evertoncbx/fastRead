@@ -69,7 +69,7 @@ export const Header: React.FC<HeaderProps> = ({ user, onOpenGuide, onLogout }) =
                   className="flex items-center gap-1 bg-stone-100 border-2 border-stone-200 px-3 py-1.5 rounded-xl text-stone-900 text-xs font-mono font-black"
                 >
                   <span>{user.currentWpm}</span>
-                  <span className="text-[11px] text-stone-500 font-bold">PPM</span>
+                  <span className="text-xs text-stone-600 font-bold">PPM</span>
                 </div>
 
                 {/* Cloud Sync Button */}

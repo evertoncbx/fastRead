@@ -283,18 +283,18 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
                       <button
                         key={optIdx}
                         onClick={() => handleSelectOption(optIdx)}
-                        className={`w-full p-3.5 rounded-xl text-left text-xs md:text-sm font-medium transition-all flex items-start gap-2.5 ${
+                        className={`w-full p-4 rounded-2xl text-left text-sm md:text-base font-bold transition-all flex items-start gap-3 cursor-pointer ${
                           isSelected
-                            ? 'bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-400'
-                            : 'bg-stone-50 text-stone-700 hover:bg-stone-100 border border-stone-200'
+                            ? 'bg-emerald-600 text-white shadow-md border-b-4 border-emerald-800 ring-2 ring-emerald-400'
+                            : 'bg-stone-50 text-stone-800 hover:bg-stone-100 border-2 border-stone-200'
                         }`}
                       >
-                        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 ${
-                          isSelected ? 'bg-white text-emerald-800' : 'bg-stone-200 text-stone-600'
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black shrink-0 mt-0.5 ${
+                          isSelected ? 'bg-white text-emerald-800' : 'bg-stone-200 text-stone-700'
                         }`}>
                           {String.fromCharCode(65 + optIdx)}
                         </span>
-                        <span>{opt}</span>
+                        <span className="leading-snug">{opt}</span>
                       </button>
                     );
                   })}
@@ -303,10 +303,10 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
                 <button
                   disabled={selectedOpt === undefined}
                   onClick={handleNextQuizQuestion}
-                  className="w-full py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs flex items-center justify-center gap-2 transition-all mt-3"
+                  className="w-full py-4 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black text-sm sm:text-base flex items-center justify-center gap-2 border-b-4 border-emerald-800 shadow-md transition-all mt-4 cursor-pointer active:scale-98"
                 >
                   <span>{currentQuizIndex < text.quiz.length - 1 ? 'Próxima Pergunta' : 'Finalizar Teste'}</span>
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight className="w-5 h-5" />
                 </button>
               </div>
             );

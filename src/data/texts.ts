@@ -1610,7 +1610,7 @@ Esse mecanismo de descarte não é defeito da máquina biológica, mas uma estra
 
 Cada vez que revisitamos uma tarefa no momento exato em que a curva do esquecimento começa a declinar, o cérebro reconstrói a trilha neural com diâmetro sináptico mais largo e mielinização mais densa. A curva de retenção torna-se progressivamente mais plana e suave. Treinar quinze minutos diários ao longo de duas semanas consecutivas consolida uma velocidade de leitura infinitamente superior a uma maratona extenuante de seis horas no fim de semana.
 
-É exatamente por isso que a jornada diária do leia+ estrutura pequenos desafios regulares a cada vinte e quatro horas. Manter a sequência ininterrupta não é apenas um jogo para conquistar chamas e medalhas virtuais; é uma aplicação prática e cientificamente validada da neurociência da memória para garantir que o seu ganho de cinqüenta por cento em velocidade seja uma conquista definitiva para a sua vida inteira.`,
+É exatamente por isso que a jornada diária do Super Leitura estrutura pequenos desafios regulares a cada vinte e quatro horas. Manter a sequência ininterrupta não é apenas um jogo para conquistar chamas e medalhas virtuais; é uma aplicação prática e cientificamente validada da neurociência da memória para garantir que o seu ganho de cinqüenta por cento em velocidade seja uma conquista definitiva para a sua vida inteira.`,
     quiz: [
       {
         id: 'ebb-1',

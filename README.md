@@ -1,4 +1,4 @@
-# leia+ | Aplicativo de Leitura Dinâmica Turbo (+50%)
+# Super Leitura | Aplicativo de Leitura Dinâmica Turbo (+50%)
 
 > Aplicativo Web Mobile-First projetado para aumentar a velocidade de leitura do usuário em até **50%** em semanas através de protocolos neurocientíficos diários de 15 a 20 minutos, supressão da subvocalização, expansão do campo parafoveal e testes com aferição de retenção.
 
@@ -8,7 +8,7 @@
 
 1. **Eliminar o Vício de Subvocalização:**
    - A voz mental articula no máximo entre 150 e 220 Palavras Por Minuto (PPM), limitando artificialmente a velocidade do pensamento.
-   - O leia+ utiliza **Metrônomo Sonoro/Visual (Web Audio API)** em cadências aceleradas (>250 BPM) combinadas com técnicas de relaxamento fonatório e contagem concorrente para forçar a decodificação visual direta.
+   - O Super Leitura utiliza **Metrônomo Sonoro/Visual (Web Audio API)** em cadências aceleradas (>250 BPM) combinadas com técnicas de relaxamento fonatório e contagem concorrente para forçar a decodificação visual direta.
 
 2. **Acelerar a Captação Visual das Palavras:**
    - **Tabelas de Schulte (3x3 a 5x5):** Desenvolvem a visão periférica mantendo o olhar ancorado no centro foveal.
@@ -81,13 +81,13 @@ npm run preview
 
 ## 🌐 Deploy Ativo e Links de Produção
 
-- **Link Vercel Oficial:** [https://leiamais.vercel.app](https://leiamais.vercel.app)
+- **Link Vercel Oficial:** [https://superleitura.vercel.app](https://superleitura.vercel.app)
 - **Repositório GitHub:** [https://github.com/evertoncbx/fastRead](https://github.com/evertoncbx/fastRead)
 - **Deploy GitHub Pages (Permanente):** [https://evertoncbx.github.io/fastRead/](https://evertoncbx.github.io/fastRead/) *(disponível ao habilitar Pages -> Source: GitHub Actions nas configurações do repositório)*
 
-### Configuração de Domínio na Vercel (leiamais.vercel.app)
+### Configuração de Domínio na Vercel (superleitura.vercel.app)
 1. No painel do seu projeto na Vercel, acesse **Settings** > **Domains**.
-2. Adicione o domínio `leiamais.vercel.app`.
+2. Adicione o domínio `superleitura.vercel.app`.
 3. A Vercel associará imediatamente a rota ao deploy da branch `main`.
 
 ### Integração Contínua com GitHub + Vercel

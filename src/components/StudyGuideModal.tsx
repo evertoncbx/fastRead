@@ -20,7 +20,7 @@ export const StudyGuideModal: React.FC<StudyGuideModalProps> = ({ isOpen, onClos
             </div>
             <div>
               <h2 className="text-xl font-black text-[#131F24]">Como Funciona</h2>
-              <p className="text-sm font-bold text-stone-400">Guia Rápido leia+</p>
+              <p className="text-sm font-bold text-stone-400">Guia Rápido Super Leitura</p>
             </div>
           </div>
           <button

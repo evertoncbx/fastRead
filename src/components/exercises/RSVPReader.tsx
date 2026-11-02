@@ -52,11 +52,22 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
   };
 
   // Ponto Ótimo de Reconhecimento (ORP - Optimal Recognition Point)
+  const currentWord = words[currentIndex] || '';
+
+  const fontSizeClass = useMemo(() => {
+    const len = currentWord.length;
+    if (len <= 5) return 'text-5xl sm:text-6xl';
+    if (len <= 8) return 'text-4xl sm:text-5xl';
+    if (len <= 11) return 'text-3xl sm:text-4xl';
+    if (len <= 15) return 'text-2xl sm:text-3xl';
+    return 'text-xl sm:text-2xl';
+  }, [currentWord]);
+
   const currentWordParts = useMemo(() => {
     if (words.length === 0 || currentIndex >= words.length) {
       return { prefix: '', orp: '', suffix: '' };
     }
-    const word = words[currentIndex] || '';
+    const word = currentWord;
     const len = word.length;
     if (len === 0) return { prefix: '', orp: '', suffix: '' };
     if (len === 1) return { prefix: '', orp: word, suffix: '' };
@@ -72,7 +83,7 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
       orp: word.charAt(orpIndex),
       suffix: word.substring(orpIndex + 1)
     };
-  }, [words, currentIndex]);
+  }, [words, currentIndex, currentWord]);
 
   useEffect(() => {
     if (isPlaying) {
@@ -193,11 +204,11 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
         </div>
       </div>
 
-      {/* TELA PRINCIPAL RSVP: Palavra Gigante com Ponto Focal */}
-      <div className="relative card-duo p-8 sm:p-14 min-h-[240px] sm:min-h-[280px] flex flex-col items-center justify-center bg-white mb-4">
-        {/* Marcadores Visuais Centrais */}
-        <div className="absolute top-4 w-5 h-2 bg-[#FF4B4B] rounded-full" />
-        <div className="absolute bottom-4 w-5 h-2 bg-[#FF4B4B] rounded-full" />
+      {/* TELA PRINCIPAL RSVP: Palavra Dinâmica com Ponto Focal Ótimo (ORP) */}
+      <div className="relative card-duo px-4 py-8 sm:px-6 sm:py-12 min-h-[240px] sm:min-h-[280px] flex flex-col items-center justify-center bg-white mb-4 overflow-hidden">
+        {/* Marcadores Visuais Centrais Perfeitamente Alinhados */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 w-5 h-2 bg-[#FF4B4B] rounded-full" />
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-5 h-2 bg-[#FF4B4B] rounded-full" />
 
         {isFinished ? (
           <div className="text-center space-y-2 animate-in zoom-in-95">
@@ -206,14 +217,14 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
             <p className="text-base font-bold text-stone-400">Velocidade média: {wpm} PPM</p>
           </div>
         ) : (
-          <div className="font-mono text-5xl sm:text-7xl font-black tracking-wide select-none flex items-baseline justify-center">
-            <span className="text-right text-[#131F24] w-[4.5ch]">
+          <div className={`w-full font-mono font-black tracking-tight sm:tracking-normal select-none flex items-baseline justify-center ${fontSizeClass}`}>
+            <span className="flex-1 text-right text-[#131F24] whitespace-nowrap">
               {currentWordParts.prefix}
             </span>
-            <span className="text-[#FF4B4B] font-black underline decoration-4 decoration-[#FF4B4B] px-0.5">
+            <span className="shrink-0 text-[#FF4B4B] font-black underline decoration-4 decoration-[#FF4B4B] px-0.5">
               {currentWordParts.orp}
             </span>
-            <span className="text-left text-[#131F24] w-[4.5ch]">
+            <span className="flex-1 text-left text-[#131F24] whitespace-nowrap">
               {currentWordParts.suffix}
             </span>
           </div>

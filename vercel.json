@@ -1,6 +1,5 @@
 {
   "framework": "vite",
-  "alias": ["leiamais.vercel.app"],
   "rewrites": [
     {
       "source": "/(.*)",

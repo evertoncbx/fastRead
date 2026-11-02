@@ -9,11 +9,14 @@ interface ReadingTestProps {
   customText?: ReadingText;
   isInitialTest?: boolean;
   baselineWpm?: number;
+  recentTitles?: string[];
   onComplete: (data: {
     wpm: number;
     comprehensionScore: number;
     durationSeconds: number;
     effectiveWpm: number;
+    textTitle?: string;
+    textId?: string;
   }) => void;
   onBack?: () => void;
 }
@@ -22,16 +25,14 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
   customText,
   isInitialTest = false,
   baselineWpm = 0,
+  recentTitles = [],
   onComplete,
   onBack
 }) => {
-  // Inicialização inteligente do texto: se não for passado customText, sorteia um dos textos de avaliação
+  // Inicialização inteligente do texto: se não for passado customText, sorteia evitando textos recentes
   const [text, setText] = useState<ReadingText>(() => {
     if (customText) return customText;
-    if (isInitialTest) {
-      return getRandomAssessmentText();
-    }
-    return getRandomAssessmentText();
+    return getRandomAssessmentText(recentTitles);
   });
 
   // Fases: 'intro' | 'reading' | 'quiz' | 'result'
@@ -63,7 +64,8 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
   }, [customText]);
 
   const handleShuffleText = () => {
-    const newText = getRandomAssessmentText([text.id, text.title]);
+    const exclude = [text.id, text.title, ...recentTitles];
+    const newText = getRandomAssessmentText(exclude);
     setText(newText);
   };
 
@@ -407,7 +409,9 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
                 wpm: scoreData.wpm,
                 comprehensionScore: scoreData.compPercent,
                 durationSeconds: Math.round(scoreData.elapsedSeconds),
-                effectiveWpm: scoreData.effectiveWpm
+                effectiveWpm: scoreData.effectiveWpm,
+                textTitle: text.title,
+                textId: text.id
               });
             }}
             className="w-full py-4 px-6 rounded-2xl bg-emerald-700 hover:bg-emerald-600 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/40 active:scale-98 transition-all"

@@ -41,6 +41,11 @@ export const App: React.FC = () => {
     setResults(storage.getResults());
     setDailyProgress(storage.getDailyProgress());
 
+    // Sincronização em segundo plano para manter perfil e nuvem sempre alinhados
+    if (loadedUser && loadedUser.email) {
+      void storage.syncToRemote(loadedUser, storage.getResults());
+    }
+
     // Se o usuário existir mas nunca realizou o teste diagnóstico inicial, abre o teste
     if (loadedUser && !loadedUser.initialTestCompleted) {
       const initialText = getRandomAssessmentText();
@@ -109,6 +114,8 @@ export const App: React.FC = () => {
     comprehensionScore: number;
     durationSeconds: number;
     effectiveWpm: number;
+    textTitle?: string;
+    textId?: string;
   }) => {
     if (!user) return;
 
@@ -121,17 +128,18 @@ export const App: React.FC = () => {
         currentWpm: data.wpm,
         bestWpm: data.wpm,
         averageComprehension: data.comprehensionScore,
-        initialTestCompleted: true,
-        testsCompleted: 1
+        initialTestCompleted: true
       });
       if (updated) setUser(updated);
     }
+
+    const completedTitle = data.textTitle || activeExercise?.customText?.title || (activeExercise?.isInitialDiagnostic ? 'Teste Diagnóstico Inicial' : 'Teste de Aferição (+50%)');
 
     // Salvar resultado
     storage.addResult({
       userId: user.id,
       exerciseType: 'assessment',
-      title: activeExercise?.customText?.title || (activeExercise?.isInitialDiagnostic ? 'Teste Diagnóstico Inicial' : 'Teste de Aferição (+50%)'),
+      title: completedTitle,
       wpm: data.wpm,
       comprehensionScore: data.comprehensionScore,
       durationSeconds: data.durationSeconds
@@ -230,7 +238,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#131211] text-[#f3efe8] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#191715] text-[#f3efe8] flex flex-col font-sans">
       {/* Modal de Cadastro / Restauração Multi-Dispositivo */}
       <AuthModal
         isOpen={user === null}
@@ -337,6 +345,7 @@ export const App: React.FC = () => {
                 customText={activeExercise.customText}
                 isInitialTest={activeExercise.isInitialDiagnostic}
                 baselineWpm={user?.baselineWpm || 0}
+                recentTitles={results.filter(r => r.exerciseType === 'assessment').map(r => r.title)}
                 onBack={() => setActiveExercise(null)}
                 onComplete={handleAssessmentComplete}
               />

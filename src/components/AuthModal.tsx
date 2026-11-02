@@ -85,9 +85,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onSave, onRestore 
       setIsSearchingRemote(false);
     }
 
-    // Se realmente for novo perfil
+    // Se realmente for novo perfil e nome não foi preenchido
     if (!name.trim()) {
-      setError('Por favor, informe o seu nome para criar seu perfil.');
+      setError('E-mail não localizado na nuvem. Se você já fez o teste no computador, use o mesmo e-mail ou a aba "Código de Sincronização". Para criar um novo perfil agora, informe seu nome abaixo.');
       return;
     }
 

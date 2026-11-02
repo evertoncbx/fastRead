@@ -5,13 +5,13 @@
 @layer base {
   html {
     -webkit-tap-highlight-color: transparent;
-    background-color: #181614;
+    background-color: #191715;
     color: #f5efe6;
   }
   
   body {
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    background-color: #181614;
+    background-color: #191715;
     color: #f5efe6;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;

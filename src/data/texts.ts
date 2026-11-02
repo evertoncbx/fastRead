@@ -657,10 +657,10 @@ export function getRandomAssessmentText(excludeIds: string[] = []): ReadingText 
   }
 
   // 2. Fallback: Se o usuário já concluiu todos os textos, exclui obrigatoriamente
-  // o texto MAIS RECENTE (excludeIds[0]) para que em caso de repetição nunca caia no mesmo texto
-  const mostRecent = excludeIds[0];
-  const candidatesWithoutMostRecent = mostRecent
-    ? candidatesWithQuiz.filter(item => item.id !== mostRecent && item.title !== mostRecent)
+  // os textos mais recentes (ID e Título) para que em caso de repetição nunca caia no mesmo texto
+  const mostRecentItems = excludeIds.slice(0, 2);
+  const candidatesWithoutMostRecent = mostRecentItems.length > 0
+    ? candidatesWithQuiz.filter(item => !mostRecentItems.includes(item.id) && !mostRecentItems.includes(item.title))
     : candidatesWithQuiz;
 
   const pool = candidatesWithoutMostRecent.length > 0 ? candidatesWithoutMostRecent : candidatesWithQuiz;
@@ -682,9 +682,9 @@ export function getRandomExerciseText(excludeIds: string[] = []): ReadingText {
     return unreadCandidates[randomIndex];
   }
 
-  const mostRecent = excludeIds[0];
-  const candidatesWithoutMostRecent = mostRecent
-    ? READING_LIBRARY.filter(item => item.id !== mostRecent && item.title !== mostRecent)
+  const mostRecentItems = excludeIds.slice(0, 2);
+  const candidatesWithoutMostRecent = mostRecentItems.length > 0
+    ? READING_LIBRARY.filter(item => !mostRecentItems.includes(item.id) && !mostRecentItems.includes(item.title))
     : READING_LIBRARY;
 
   const pool = candidatesWithoutMostRecent.length > 0 ? candidatesWithoutMostRecent : READING_LIBRARY;

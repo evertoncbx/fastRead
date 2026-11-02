@@ -185,6 +185,15 @@ describe('Text Randomization & Anti-Repetition Engine', () => {
       assert.notStrictEqual(text.id, 'machado-cartomante');
     }
   });
+
+  it('excludes both IDs and Titles when shuffling or retesting', () => {
+    const exclude = ['diag-01', 'Teste Diagnóstico 2: A Atenção Focada e o Ritmo Cognitivo'];
+    for (let i = 0; i < 20; i++) {
+      const text = getRandomAssessmentText(exclude);
+      assert.notStrictEqual(text.id, 'diag-01');
+      assert.notStrictEqual(text.title, 'Teste Diagnóstico 2: A Atenção Focada e o Ritmo Cognitivo');
+    }
+  });
 });
 
 describe('Cross-Device Cloud Sync & Storage Engine', () => {
@@ -220,8 +229,8 @@ describe('Cross-Device Cloud Sync & Storage Engine', () => {
     const syncSuccess = await storage.syncToRemote(testProfile, []);
     assert.strictEqual(syncSuccess, true, 'syncToRemote should succeed');
 
-    // 2. Busca e restaura simulando abertura no celular com o mesmo email
-    const remote = await storage.fetchRemoteProfile(testEmail);
+    // 2. Busca e restaura simulando abertura no celular com o mesmo email digitado com maiúsculas/espaços
+    const remote = await storage.fetchRemoteProfile(`  ${testEmail.toUpperCase()}  `);
     assert(remote.profile !== null, 'Profile should be found in cloud');
     assert.strictEqual(remote.profile.email, testEmail);
     assert.strictEqual(remote.profile.baselineWpm, 255);

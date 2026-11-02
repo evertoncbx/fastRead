@@ -428,7 +428,7 @@ export const storage = {
       };
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
 
       await fetch(uploadUrl, {
         method: 'POST',
@@ -457,7 +457,7 @@ export const storage = {
       const publicUrl = `${DEFAULT_STORAGE_URL}/public/${DEFAULT_STORAGE_BUCKET}/${fileName}?_t=${Date.now()}`;
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
 
       const res = await fetch(publicUrl, {
         signal: controller.signal
@@ -467,6 +467,10 @@ export const storage = {
       if (!res || !res.ok) return null;
       const data = await res.json();
       if (data && data.profile && data.profile.email) {
+        // Garantir que perfil com baseline definido seja reconhecido com teste concluído
+        if (data.profile.baselineWpm > 0 && data.profile.initialTestCompleted === undefined) {
+          data.profile.initialTestCompleted = true;
+        }
         return {
           profile: data.profile,
           results: Array.isArray(data.results) ? data.results : [],

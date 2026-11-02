@@ -34,15 +34,19 @@ export const Header: React.FC<HeaderProps> = ({ user, onOpenGuide, onLogout }) =
         <div className="max-w-lg mx-auto flex items-center justify-between gap-1 sm:gap-2">
           {/* Logo & Marca */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0 min-w-0">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-[#58CC02] border-b-4 border-[#46A302] flex items-center justify-center text-white shadow-sm shrink-0">
+            <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-[#58CC02] border-b-4 border-[#46A302] flex items-center justify-center text-white shadow-sm shrink-0">
               <BookOpen className="w-5 h-5 sm:w-7 sm:h-7 stroke-[2.5]" />
+              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 sm:w-5 sm:h-5 bg-[#FFC800] text-[#7A5000] border-2 border-white rounded-full flex items-center justify-center text-[10px] sm:text-xs font-black shadow-xs leading-none">
+                +
+              </span>
             </div>
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#131F24]">
-                  LEITOX
+              <div className="flex items-center gap-1 sm:gap-1.5">
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#131F24] flex items-baseline">
+                  <span>leia</span>
+                  <span className="text-[#58CC02] text-2xl sm:text-3xl font-black leading-none ml-0.5">+</span>
                 </h1>
-                <span className="text-[10px] sm:text-xs bg-[#FFC800] text-[#7A5000] border-2 border-[#E5A500] px-1.5 sm:px-2 py-0.5 rounded-full font-black">
+                <span className="text-[10px] sm:text-xs bg-[#FFC800] text-[#7A5000] border-2 border-[#E5A500] px-1.5 sm:px-2 py-0.5 rounded-full font-black ml-0.5">
                   +50%
                 </span>
               </div>

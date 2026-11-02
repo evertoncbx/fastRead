@@ -92,10 +92,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onSave, onRestore 
       <div className="bg-white border-2 border-stone-200 rounded-3xl max-w-sm w-full p-6 sm:p-8 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 text-[#131F24]">
         {/* Header com Logo */}
         <div className="text-center space-y-2">
-          <div className="w-16 h-16 rounded-3xl bg-[#58CC02] border-b-4 border-[#46A302] flex items-center justify-center text-white mx-auto shadow-sm">
+          <div className="relative w-16 h-16 rounded-3xl bg-[#58CC02] border-b-4 border-[#46A302] flex items-center justify-center text-white mx-auto shadow-sm">
             <BookOpen className="w-8 h-8 stroke-[2.5]" />
+            <span className="absolute -top-1 -right-1 w-6 h-6 bg-[#FFC800] text-[#7A5000] border-2 border-white rounded-full flex items-center justify-center text-sm font-black leading-none shadow-xs">
+              +
+            </span>
           </div>
-          <h2 className="text-2xl font-black text-[#131F24]">Bem-vindo ao Leitox</h2>
+          <h2 className="text-2xl font-black text-[#131F24]">
+            Bem-vindo ao leia<span className="text-[#58CC02]">+</span>
+          </h2>
           <p className="text-sm font-bold text-stone-500">
             Treine sua leitura diária e aumente sua velocidade em até +50%.
           </p>

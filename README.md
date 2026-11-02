@@ -79,11 +79,12 @@ npm run preview
 
 ---
 
-## 🌐 Deploy na Vercel
+## 🌐 Deploy Ativo e Links de Produção
 
-O aplicativo possui build validado e deploy executado na Vercel:
-- **Deploy Ativo:** [https://flying-eclipse-ryaf1c5.tmp.now](https://flying-eclipse-ryaf1c5.tmp.now)
-- **Claim URL:** [https://vercel.com/claim-deployment?code=2b406db5-d746-4232-9558-458fbf3ef46d](https://vercel.com/claim-deployment?code=2b406db5-d746-4232-9558-458fbf3ef46d)
+- **Link Vercel Atualizado:** [https://quick-iodine-oc7dqgg.tmp.now](https://quick-iodine-oc7dqgg.tmp.now)
+- **Claim URL Permanente Vercel:** [https://vercel.com/claim-deployment?code=c0ed04a9-6c12-4af8-beb1-2be1a678d2d4](https://vercel.com/claim-deployment?code=c0ed04a9-6c12-4af8-beb1-2be1a678d2d4)
+- **Repositório GitHub:** [https://github.com/evertoncbx/fastRead](https://github.com/evertoncbx/fastRead)
+- **Deploy GitHub Pages (Permanente):** [https://evertoncbx.github.io/fastRead/](https://evertoncbx.github.io/fastRead/) *(disponível ao habilitar Pages -> Source: GitHub Actions nas configurações do repositório)*
 
 ### Integração Contínua com GitHub + Vercel
 1. O repositório está sincronizado em [https://github.com/evertoncbx/fastRead](https://github.com/evertoncbx/fastRead).

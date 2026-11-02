@@ -52,6 +52,9 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
     const nextText = getRandomExerciseText(exclusions);
     storage.addRecentReadText(nextText.id, nextText.title);
     setCurrentText(nextText);
+    if (wordsContainerRef.current) {
+      wordsContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   useEffect(() => {
@@ -62,19 +65,35 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
   }, []);
 
   useEffect(() => {
-    if (isPlaying && activeWordRef.current && wordsContainerRef.current) {
+    if (activeWordRef.current && wordsContainerRef.current) {
       const container = wordsContainerRef.current;
       const element = activeWordRef.current;
-      const containerTop = container.scrollTop;
-      const containerHeight = container.clientHeight;
-      const elementTop = element.offsetTop;
-      const elementHeight = element.offsetHeight;
 
-      if (elementTop < containerTop + 60 || elementTop + elementHeight > containerTop + containerHeight - 60) {
-        container.scrollTo({
-          top: Math.max(0, elementTop - containerHeight / 3),
-          behavior: 'smooth'
-        });
+      const containerRect = container.getBoundingClientRect();
+      const elementRect = element.getBoundingClientRect();
+
+      // Posição vertical do elemento ativo em relação à janela visível do container
+      const relativeTop = elementRect.top - containerRect.top;
+      const relativeBottom = elementRect.bottom - containerRect.top;
+
+      // Margens de conforto visual:
+      // - Se o elemento estiver muito perto do topo (< 40px) e o container já tiver sido rolado
+      // - Se o elemento estiver avançando na parte inferior (> container.clientHeight - 80px)
+      const isAboveComfortZone = relativeTop < 40 && container.scrollTop > 0;
+      const isBelowComfortZone = relativeBottom > container.clientHeight - 80;
+
+      if (isAboveComfortZone || isBelowComfortZone) {
+        // Posiciona a linha ativa no terço superior (~30% da altura visível) com visão livre para as próximas linhas
+        const targetRelativeTop = Math.max(24, container.clientHeight * 0.3);
+        const delta = relativeTop - targetRelativeTop;
+        const targetScrollTop = Math.max(0, container.scrollTop + delta);
+
+        if (Math.abs(container.scrollTop - targetScrollTop) > 8) {
+          container.scrollTo({
+            top: targetScrollTop,
+            behavior: 'smooth'
+          });
+        }
       }
     }
   }, [currentIndex, isPlaying]);
@@ -148,6 +167,9 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
       setCurrentIndex(0);
       setRemainingSeconds(sessionSeconds);
       setIsFinished(false);
+      if (wordsContainerRef.current) {
+        wordsContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     }
     setShowCountdown(true);
   };
@@ -243,7 +265,7 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
       {/* ÁREA DE LEITURA COM PALAVRA DESTACADA EM DUOLINGO GREEN */}
       <div
         ref={wordsContainerRef}
-        className="card-duo p-6 sm:p-8 bg-white min-h-[320px] max-h-[50vh] overflow-y-auto mb-4 font-reading text-2xl sm:text-3xl leading-[2.2] text-[#131F24] select-none"
+        className="card-duo p-6 sm:p-8 bg-white min-h-[320px] max-h-[50vh] overflow-y-auto mb-4 font-reading text-2xl sm:text-3xl leading-[2.2] text-[#131F24] select-none scroll-smooth"
       >
         <div className="flex flex-wrap gap-x-2.5 gap-y-3.5 items-center">
           {words.map((word, idx) => {
@@ -254,7 +276,7 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
               <span
                 key={idx}
                 ref={isActive ? activeWordRef : null}
-                className={`transition-all rounded-xl px-2 py-0.5 ${
+                className={`inline-block transition-all rounded-xl px-2 py-0.5 ${
                   isActive
                     ? 'bg-[#58CC02] text-white font-black scale-105 shadow-sm'
                     : isPast

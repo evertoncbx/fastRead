@@ -50,6 +50,9 @@ export const ChunkingTrainer: React.FC<ChunkingTrainerProps> = ({ customText, on
     const nextText = getRandomExerciseText(exclusions);
     storage.addRecentReadText(nextText.id, nextText.title);
     setCurrentText(nextText);
+    if (chunkContainerRef.current) {
+      chunkContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   useEffect(() => {
@@ -59,19 +62,33 @@ export const ChunkingTrainer: React.FC<ChunkingTrainerProps> = ({ customText, on
   }, []);
 
   useEffect(() => {
-    if (isPlaying && activeChunkRef.current && chunkContainerRef.current) {
+    if (activeChunkRef.current && chunkContainerRef.current) {
       const container = chunkContainerRef.current;
       const element = activeChunkRef.current;
-      const containerTop = container.scrollTop;
-      const containerHeight = container.clientHeight;
-      const elementTop = element.offsetTop;
-      const elementHeight = element.offsetHeight;
 
-      if (elementTop < containerTop + 50 || elementTop + elementHeight > containerTop + containerHeight - 50) {
-        container.scrollTo({
-          top: Math.max(0, elementTop - containerHeight / 3),
-          behavior: 'smooth'
-        });
+      const containerRect = container.getBoundingClientRect();
+      const elementRect = element.getBoundingClientRect();
+
+      // Posição vertical do bloco em relação à área visível do container
+      const relativeTop = elementRect.top - containerRect.top;
+      const relativeBottom = elementRect.bottom - containerRect.top;
+
+      // Margens de conforto visual para blocos de leitura
+      const isAboveComfortZone = relativeTop < 40 && container.scrollTop > 0;
+      const isBelowComfortZone = relativeBottom > container.clientHeight - 80;
+
+      if (isAboveComfortZone || isBelowComfortZone) {
+        // Posiciona o bloco ativo no terço superior (~35% da altura)
+        const targetRelativeTop = Math.max(24, container.clientHeight * 0.35);
+        const delta = relativeTop - targetRelativeTop;
+        const targetScrollTop = Math.max(0, container.scrollTop + delta);
+
+        if (Math.abs(container.scrollTop - targetScrollTop) > 8) {
+          container.scrollTo({
+            top: targetScrollTop,
+            behavior: 'smooth'
+          });
+        }
       }
     }
   }, [currentChunkIndex, isPlaying]);
@@ -113,6 +130,9 @@ export const ChunkingTrainer: React.FC<ChunkingTrainerProps> = ({ customText, on
     if (isFinished) {
       setCurrentChunkIndex(0);
       setIsFinished(false);
+      if (chunkContainerRef.current) {
+        chunkContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     }
     setShowCountdown(true);
   };
@@ -180,7 +200,7 @@ export const ChunkingTrainer: React.FC<ChunkingTrainerProps> = ({ customText, on
       {/* ÁREA DE LEITURA EM BLOCOS COM TIPOGRAFIA GRANDE */}
       <div
         ref={chunkContainerRef}
-        className="card-duo p-6 sm:p-8 bg-white min-h-[320px] max-h-[50vh] overflow-y-auto mb-4 font-reading text-2xl sm:text-3xl leading-relaxed text-[#131F24] select-none"
+        className="card-duo p-6 sm:p-8 bg-white min-h-[320px] max-h-[50vh] overflow-y-auto mb-4 font-reading text-2xl sm:text-3xl leading-relaxed text-[#131F24] select-none scroll-smooth"
       >
         <div className="flex flex-col gap-3.5 items-center text-center">
           {chunks.map((chunk, idx) => {

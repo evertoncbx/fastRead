@@ -33,8 +33,41 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
   const [remainingSeconds, setRemainingSeconds] = useState<number>(180);
   const [soundOn, setSoundOn] = useState<boolean>(audio.isEnabled());
 
-  const words = useMemo(() => {
-    return currentText.text.split(/\s+/).filter(w => w.trim().length > 0);
+  const { words, paragraphs } = useMemo(() => {
+    const rawParagraphs = currentText.text
+      .split(/\n+/)
+      .map(p => p.trim())
+      .filter(p => p.length > 0);
+
+    let wordCounter = 0;
+    const structuredParagraphs: {
+      paragraphIndex: number;
+      words: { text: string; globalIndex: number }[];
+    }[] = [];
+
+    const allWords: string[] = [];
+
+    rawParagraphs.forEach((pText, pIdx) => {
+      const pWords = pText.split(/\s+/).filter(w => w.trim().length > 0);
+      const paragraphWordItems: { text: string; globalIndex: number }[] = [];
+
+      pWords.forEach(w => {
+        allWords.push(w);
+        paragraphWordItems.push({
+          text: w,
+          globalIndex: wordCounter++
+        });
+      });
+
+      if (paragraphWordItems.length > 0) {
+        structuredParagraphs.push({
+          paragraphIndex: pIdx,
+          words: paragraphWordItems
+        });
+      }
+    });
+
+    return { words: allWords, paragraphs: structuredParagraphs };
   }, [currentText]);
 
   const calculatedWpm = bpm * wordsPerBeat;
@@ -267,27 +300,31 @@ export const MetronomeReader: React.FC<MetronomeReaderProps> = ({ customText, on
         ref={wordsContainerRef}
         className="card-duo p-6 sm:p-8 bg-white min-h-[320px] max-h-[50vh] overflow-y-auto mb-4 font-reading text-2xl sm:text-3xl leading-[2.2] text-[#131F24] select-none scroll-smooth"
       >
-        <div className="flex flex-wrap gap-x-2.5 gap-y-3.5 items-center">
-          {words.map((word, idx) => {
-            const isActive = idx === currentIndex;
-            const isPast = idx < currentIndex;
+        <div className="space-y-6">
+          {paragraphs.map((p) => (
+            <div key={p.paragraphIndex} className="flex flex-wrap gap-x-2.5 gap-y-3.5 items-center">
+              {p.words.map(({ text, globalIndex }) => {
+                const isActive = globalIndex === currentIndex;
+                const isPast = globalIndex < currentIndex;
 
-            return (
-              <span
-                key={idx}
-                ref={isActive ? activeWordRef : null}
-                className={`inline-block transition-all rounded-xl px-2 py-0.5 ${
-                  isActive
-                    ? 'bg-[#58CC02] text-white font-black scale-105 shadow-sm'
-                    : isPast
-                    ? 'text-stone-300 font-medium'
-                    : 'text-[#131F24] font-medium'
-                }`}
-              >
-                {word}
-              </span>
-            );
-          })}
+                return (
+                  <span
+                    key={globalIndex}
+                    ref={isActive ? activeWordRef : null}
+                    className={`inline-block rounded-xl px-2 py-0.5 font-bold transition-colors duration-100 ${
+                      isActive
+                        ? 'bg-[#58CC02] text-white shadow-xs'
+                        : isPast
+                        ? 'text-stone-300'
+                        : 'text-[#131F24]'
+                    }`}
+                  >
+                    {text}
+                  </span>
+                );
+              })}
+            </div>
+          ))}
         </div>
       </div>
 

@@ -211,12 +211,12 @@ export const ChunkingTrainer: React.FC<ChunkingTrainerProps> = ({ customText, on
               <div
                 key={idx}
                 ref={isActive ? activeChunkRef : null}
-                className={`py-2.5 px-5 rounded-2xl transition-all ${
+                className={`py-2.5 px-5 rounded-2xl border-2 font-bold transition-colors duration-100 ${
                   isActive
-                    ? 'bg-[#F6E8FF] text-[#A559D9] border-2 border-[#CE82FF] font-black scale-105 shadow-sm'
+                    ? 'bg-[#F6E8FF] text-[#A559D9] border-[#CE82FF] shadow-xs'
                     : isPast
-                    ? 'text-stone-300 font-medium'
-                    : 'text-stone-700 font-medium'
+                    ? 'text-stone-300 border-transparent'
+                    : 'text-stone-700 border-transparent'
                 }`}
               >
                 {chunk}

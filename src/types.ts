@@ -1,5 +1,7 @@
 export type ExerciseType = 'schulte' | 'metronome' | 'rsvp' | 'chunking' | 'saccadic' | 'assessment';
 
+export type RsvpPacingMode = 'adaptive' | 'fixed';
+
 export interface UserProfile {
   id: string;
   name: string;

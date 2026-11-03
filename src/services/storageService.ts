@@ -177,6 +177,39 @@ export const storage = {
     } catch {}
   },
 
+  // === PREFERÊNCIAS DE LEITURA RSVP (Ritmo e Velocidade) ===
+  getRsvpPacingMode(): 'adaptive' | 'fixed' {
+    try {
+      const mode = safeStorage.getItem('fastread_rsvp_pacing_mode');
+      return mode === 'fixed' ? 'fixed' : 'adaptive';
+    } catch {
+      return 'adaptive';
+    }
+  },
+
+  setRsvpPacingMode(mode: 'adaptive' | 'fixed'): void {
+    try {
+      safeStorage.setItem('fastread_rsvp_pacing_mode', mode);
+    } catch {}
+  },
+
+  getRsvpWpm(): number {
+    try {
+      const saved = safeStorage.getItem('fastread_rsvp_wpm');
+      if (saved) {
+        const val = parseInt(saved, 10);
+        if (!isNaN(val) && val >= 100 && val <= 1500) return val;
+      }
+    } catch {}
+    return 350;
+  },
+
+  setRsvpWpm(wpm: number): void {
+    try {
+      safeStorage.setItem('fastread_rsvp_wpm', String(wpm));
+    } catch {}
+  },
+
   // === BIBLIOTECA REMOTA SUPABASE (appfr.texts / appfr_texts) ===
   async fetchRemoteTexts(): Promise<ReadingText[] | null> {
     if (!supabase) return null;

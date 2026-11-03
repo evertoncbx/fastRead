@@ -15,6 +15,7 @@ import {
 import { storage, emailToStorageKey, APPFR_TABLES } from '../src/services/storageService.ts';
 import { audio } from '../src/services/audioService.ts';
 import { UserProfile } from '../src/types.ts';
+import { calculateWordWeight, calculateWordDurations, RsvpPacingMode } from '../src/services/rsvpPacingService.ts';
 
 // Logic mirror from RSVPReader for test verification
 function calculateOrpParts(word: string) {
@@ -517,5 +518,80 @@ describe('Supabase Schema & Project Projeta (appfr.* Naming Convention)', () => 
     assert(schemaSql.includes('INSERT INTO public.appfr_texts'), 'Must contain seed inserts for all texts');
   });
 });
+
+describe('RSVP Adaptive Pacing Engine (ReadMaxx-style Dynamic Timing)', () => {
+  it('correctly assigns lower weights to short words and higher weights to long words', () => {
+    const shortWeight = calculateWordWeight('de');
+    const midWeight = calculateWordWeight('tempo');
+    const longWeight = calculateWordWeight('compreensao');
+    const veryLongWeight = calculateWordWeight('extraordinariamente');
+
+    assert(shortWeight < midWeight, `Short word (${shortWeight}) should have lower weight than mid word (${midWeight})`);
+    assert(midWeight < longWeight, `Mid word (${midWeight}) should have lower weight than long word (${longWeight})`);
+    assert(longWeight < veryLongWeight, `Long word (${longWeight}) should have lower weight than very long word (${veryLongWeight})`);
+  });
+
+  it('adds natural pauses for ending punctuation (. ! ?) and breathing pauses for commas', () => {
+    const plainWord = calculateWordWeight('palavra');
+    const commaWord = calculateWordWeight('palavra,');
+    const periodWord = calculateWordWeight('palavra.');
+
+    assert(commaWord > plainWord, 'Comma should add a gentle pausing weight');
+    assert(periodWord > commaWord, 'Period should add a stronger reflective sentence pause than comma');
+  });
+
+  it('allocates strictly uniform duration in fixed mode', () => {
+    const words = ['o', 'homem', 'que', 'sabia', 'desenvolvimento', 'e', 'extraordinariamente'];
+    const wpm = 300; // 200 ms por palavra
+    const durations = calculateWordDurations(words, wpm, 'fixed');
+
+    assert.strictEqual(durations.length, words.length);
+    durations.forEach(d => {
+      assert.strictEqual(d, 200, `Expected 200ms in fixed mode at 300 PPM, got ${d}`);
+    });
+  });
+
+  it('keeps long words longer on screen in adaptive mode while preserving overall target time', () => {
+    const words = ['o', 'homem', 'que', 'sabia', 'desenvolvimento', 'e', 'extraordinariamente', 'fim.'];
+    const wpm = 300;
+    const baseExpectedTotal = words.length * 200; // 1600 ms
+
+    const durations = calculateWordDurations(words, wpm, 'adaptive');
+
+    const shortWordDuration = durations[0]; // 'o'
+    const veryLongWordDuration = durations[6]; // 'extraordinariamente'
+    const punctuationDuration = durations[7]; // 'fim.'
+
+    assert(veryLongWordDuration > shortWordDuration,
+      `Long word duration (${veryLongWordDuration}ms) must exceed short word duration (${shortWordDuration}ms)`);
+    assert(punctuationDuration > shortWordDuration,
+      `Punctuation word duration (${punctuationDuration}ms) must exceed short word duration (${shortWordDuration}ms)`);
+
+    // Verifica que a soma total dos tempos se mantém muito próxima do tempo alvo total (desvio < 5%)
+    const actualTotal = durations.reduce((acc, d) => acc + d, 0);
+    const deviation = Math.abs(actualTotal - baseExpectedTotal) / baseExpectedTotal;
+    assert(deviation < 0.05, `Overall text reading time deviation should be < 5%, got ${(deviation * 100).toFixed(1)}%`);
+  });
+
+  it('persists and retrieves user rsvp pacing mode preference in storageService', () => {
+    // Default should be adaptive
+    const defaultMode = storage.getRsvpPacingMode();
+    assert.strictEqual(defaultMode, 'adaptive');
+
+    // Switch to fixed
+    storage.setRsvpPacingMode('fixed');
+    assert.strictEqual(storage.getRsvpPacingMode(), 'fixed');
+
+    // Switch back to adaptive
+    storage.setRsvpPacingMode('adaptive');
+    assert.strictEqual(storage.getRsvpPacingMode(), 'adaptive');
+
+    // Tests WPM persistence
+    storage.setRsvpWpm(425);
+    assert.strictEqual(storage.getRsvpWpm(), 425);
+    storage.setRsvpWpm(350); // reset
+  });
+});
+
 
 

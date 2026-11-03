@@ -1,9 +1,24 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Play, Pause, RotateCcw, FastForward, Rewind, Volume2, VolumeX, ArrowLeft, Trophy, CheckCircle2 } from 'lucide-react';
+import {
+  Play,
+  Pause,
+  RotateCcw,
+  FastForward,
+  Rewind,
+  Volume2,
+  VolumeX,
+  ArrowLeft,
+  Trophy,
+  CheckCircle2,
+  Sparkles,
+  Timer,
+  Shuffle
+} from 'lucide-react';
 import { audio } from '../../services/audioService';
-import { READING_LIBRARY, getRandomExerciseText } from '../../data/texts';
+import { getRandomExerciseText } from '../../data/texts';
 import { storage } from '../../services/storageService';
-import { ReadingText } from '../../types';
+import { ReadingText, RsvpPacingMode } from '../../types';
+import { calculateWordDurations } from '../../services/rsvpPacingService';
 import { CountdownOverlay } from './CountdownOverlay';
 import confetti from 'canvas-confetti';
 
@@ -21,7 +36,8 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
     return getRandomExerciseText(exclusions);
   });
 
-  const [wpm, setWpm] = useState<number>(350); // 200 a 800 PPM
+  const [wpm, setWpm] = useState<number>(() => storage.getRsvpWpm());
+  const [pacingMode, setPacingMode] = useState<RsvpPacingMode>(() => storage.getRsvpPacingMode());
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [showCountdown, setShowCountdown] = useState<boolean>(false);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -32,13 +48,28 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
     return currentText.text.split(/\s+/).filter(w => w.trim().length > 0);
   }, [currentText]);
 
+  // Pré-calcula a duração de cada palavra de acordo com o modo selecionado
+  const wordDurations = useMemo(() => {
+    return calculateWordDurations(words, wpm, pacingMode);
+  }, [words, wpm, pacingMode]);
+
   const timerRef = useRef<number | null>(null);
-  const wpmRef = useRef(wpm);
-  wpmRef.current = wpm;
   const soundOnRef = useRef(soundOn);
   soundOnRef.current = soundOn;
   const wordsRef = useRef(words);
   wordsRef.current = words;
+
+  // Alternar modo de ritmo (Adaptativo vs Fixo) e persistir preferência
+  const handlePacingModeChange = (mode: RsvpPacingMode) => {
+    setPacingMode(mode);
+    storage.setRsvpPacingMode(mode);
+  };
+
+  // Alterar velocidade (WPM) e persistir
+  const handleWpmChange = (newWpm: number) => {
+    setWpm(newWpm);
+    storage.setRsvpWpm(newWpm);
+  };
 
   // Trocar para outro texto aleatório evitando repetições
   const handleShuffleText = () => {
@@ -85,38 +116,52 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
     };
   }, [words, currentIndex, currentWord]);
 
+  // Loop de Leitura Adaptativa / Fixa baseado no tempo exato da palavra atual
   useEffect(() => {
-    if (isPlaying) {
-      const intervalMs = Math.round((60 / wpm) * 1000);
-      timerRef.current = window.setInterval(() => {
-        setCurrentIndex(prev => {
-          const next = prev + 1;
-          if (next >= wordsRef.current.length) {
-            if (timerRef.current) clearInterval(timerRef.current);
-            setIsPlaying(false);
-            setIsFinished(true);
-            audio.playSuccess();
-            confetti({
-              particleCount: 80,
-              spread: 60,
-              origin: { y: 0.6 }
-            });
-            return prev;
-          }
-          if (soundOnRef.current && next % 5 === 0) {
-            audio.playClick();
-          }
-          return next;
-        });
-      }, intervalMs);
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current);
+    if (!isPlaying) {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      return;
     }
 
+    if (currentIndex >= words.length) {
+      setIsPlaying(false);
+      setIsFinished(true);
+      audio.playSuccess();
+      confetti({
+        particleCount: 80,
+        spread: 60,
+        origin: { y: 0.6 }
+      });
+      return;
+    }
+
+    const currentDuration = wordDurations[currentIndex] ?? Math.round((60 / wpm) * 1000);
+
+    timerRef.current = window.setTimeout(() => {
+      setCurrentIndex(prev => {
+        const next = prev + 1;
+        if (next >= wordsRef.current.length) {
+          setIsPlaying(false);
+          setIsFinished(true);
+          audio.playSuccess();
+          confetti({
+            particleCount: 80,
+            spread: 60,
+            origin: { y: 0.6 }
+          });
+          return prev;
+        }
+        if (soundOnRef.current && next % 5 === 0) {
+          audio.playClick();
+        }
+        return next;
+      });
+    }, currentDuration);
+
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [isPlaying, wpm]);
+  }, [isPlaying, currentIndex, wordDurations, words.length, wpm]);
 
   const handlePlayPause = () => {
     if (isPlaying) {
@@ -169,6 +214,17 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
         ) : <div />}
 
         <div className="flex items-center gap-2">
+          {!isDailyStep && (
+            <button
+              onClick={handleShuffleText}
+              title="Trocar de texto"
+              aria-label="Trocar de texto"
+              className="p-2.5 rounded-2xl bg-white border-2 border-stone-200 border-b-4 border-b-stone-300 text-stone-600 hover:text-[#1CB0F6] cursor-pointer"
+            >
+              <Shuffle className="w-5 h-5 stroke-[2.5]" />
+            </button>
+          )}
+
           <button
             onClick={() => setSoundOn(prev => !prev)}
             aria-label="Alternar som"
@@ -181,21 +237,43 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
 
       {/* Header Info */}
       <div className="card-duo p-5 mb-4 space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-[#DDF4FF] border-2 border-[#B0E4FF] flex items-center justify-center text-[#1899D6]">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-12 h-12 rounded-2xl bg-[#DDF4FF] border-2 border-[#B0E4FF] flex items-center justify-center text-[#1899D6] shrink-0">
               <Trophy className="w-7 h-7 stroke-[2.5]" />
             </div>
-            <div>
-              <h2 className="text-2xl font-black text-[#131F24]">
+            <div className="min-w-0">
+              <h2 className="text-2xl font-black text-[#131F24] truncate">
                 RSVP Turbo
               </h2>
             </div>
           </div>
 
-          <span className="text-base font-black bg-[#DDF4FF] text-[#1899D6] border-2 border-[#B0E4FF] px-4 py-1.5 rounded-full font-mono">
-            {wpm} PPM
-          </span>
+          <div className="flex items-center gap-2 shrink-0">
+            <span
+              className={`text-xs font-black uppercase tracking-wider px-3 py-1.5 rounded-full border flex items-center gap-1.5 ${
+                pacingMode === 'adaptive'
+                  ? 'bg-[#EBF7FF] text-[#1899D6] border-[#B0E4FF]'
+                  : 'bg-stone-100 text-stone-600 border-stone-200'
+              }`}
+            >
+              {pacingMode === 'adaptive' ? (
+                <>
+                  <Sparkles className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>Adaptativo</span>
+                </>
+              ) : (
+                <>
+                  <Timer className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>Fixo</span>
+                </>
+              )}
+            </span>
+
+            <span className="text-base font-black bg-[#DDF4FF] text-[#1899D6] border-2 border-[#B0E4FF] px-3.5 py-1.5 rounded-full font-mono">
+              {wpm} PPM
+            </span>
+          </div>
         </div>
 
         <div className="pt-2 border-t-2 border-stone-100 flex items-center justify-between text-sm font-bold text-stone-500">
@@ -214,7 +292,9 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
           <div className="text-center space-y-2 animate-in zoom-in-95">
             <CheckCircle2 className="w-16 h-16 text-[#58CC02] stroke-[2.5] mx-auto" />
             <h3 className="text-3xl font-black text-[#131F24]">Texto Concluído!</h3>
-            <p className="text-base font-bold text-stone-400">Velocidade média: {wpm} PPM</p>
+            <p className="text-base font-bold text-stone-400">
+              Velocidade: {wpm} PPM ({pacingMode === 'adaptive' ? 'Ritmo Adaptativo' : 'Ritmo Fixo'})
+            </p>
           </div>
         ) : (
           <div className={`w-full font-mono font-black tracking-tight sm:tracking-normal select-none flex items-baseline justify-center ${fontSizeClass}`}>
@@ -239,37 +319,83 @@ export const RSVPReader: React.FC<RSVPReaderProps> = ({ customText, onComplete, 
         </div>
       </div>
 
-      {/* Controles de Velocidade (PPM) */}
-      <div className="card-duo p-5 mb-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-black uppercase text-stone-400">Velocidade do Treino</span>
-          <span className="text-2xl font-black text-[#1899D6] font-mono">{wpm} PPM</span>
-        </div>
+      {/* CONFIGURAÇÕES DE LEITURA (Modo de Ritmo e Velocidade) */}
+      <div className="card-duo p-5 mb-4 space-y-4">
+        {/* Alternador de Modo de Ritmo: Adaptativo vs Fixo */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-black uppercase text-stone-400 tracking-wider">
+              Ritmo de Leitura
+            </span>
+            <span className="text-xs font-bold text-stone-500">
+              {pacingMode === 'adaptive' ? 'Natural por tamanho e pontuação' : 'Tempo idêntico por palavra'}
+            </span>
+          </div>
 
-        <input
-          type="range"
-          min="150"
-          max="800"
-          step="25"
-          value={wpm}
-          onChange={(e) => setWpm(Number(e.target.value))}
-          className="w-full accent-[#1CB0F6] h-3.5 bg-stone-100 rounded-lg cursor-pointer"
-        />
-
-        <div className="flex justify-between gap-2">
-          {[250, 350, 450, 600].map((preset) => (
+          <div className="grid grid-cols-2 gap-2">
             <button
-              key={preset}
-              onClick={() => setWpm(preset)}
-              className={`flex-1 py-2 rounded-2xl text-sm font-black transition-all cursor-pointer ${
-                wpm === preset
-                  ? 'bg-[#1CB0F6] border-b-2 border-[#1899D6] text-white'
-                  : 'btn-duo-white'
+              type="button"
+              onClick={() => handlePacingModeChange('adaptive')}
+              className={`py-3 px-3 rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                pacingMode === 'adaptive'
+                  ? 'bg-[#1CB0F6] border-b-4 border-[#1899D6] text-white shadow-sm'
+                  : 'btn-duo-white text-stone-600'
               }`}
             >
-              {preset} PPM
+              <Sparkles className="w-4 h-4 stroke-[2.5]" />
+              <span>Adaptativo</span>
             </button>
-          ))}
+
+            <button
+              type="button"
+              onClick={() => handlePacingModeChange('fixed')}
+              className={`py-3 px-3 rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                pacingMode === 'fixed'
+                  ? 'bg-[#1CB0F6] border-b-4 border-[#1899D6] text-white shadow-sm'
+                  : 'btn-duo-white text-stone-600'
+              }`}
+            >
+              <Timer className="w-4 h-4 stroke-[2.5]" />
+              <span>Fixo</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Controles de Velocidade (PPM) */}
+        <div className="pt-3 border-t-2 border-stone-100 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-black uppercase text-stone-400 tracking-wider">
+              Velocidade do Treino
+            </span>
+            <span className="text-2xl font-black text-[#1899D6] font-mono">{wpm} PPM</span>
+          </div>
+
+          <input
+            type="range"
+            min="150"
+            max="800"
+            step="25"
+            value={wpm}
+            onChange={(e) => handleWpmChange(Number(e.target.value))}
+            className="w-full accent-[#1CB0F6] h-3.5 bg-stone-100 rounded-lg cursor-pointer"
+          />
+
+          <div className="flex justify-between gap-2">
+            {[250, 350, 450, 600].map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => handleWpmChange(preset)}
+                className={`flex-1 py-2 rounded-2xl text-sm font-black transition-all cursor-pointer ${
+                  wpm === preset
+                    ? 'bg-[#1CB0F6] border-b-2 border-[#1899D6] text-white'
+                    : 'btn-duo-white'
+                }`}
+              >
+                {preset} PPM
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

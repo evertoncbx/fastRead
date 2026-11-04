@@ -12,7 +12,7 @@ import {
   calculateTextDifficulty,
   getRecommendedTextForUser
 } from '../src/data/texts.ts';
-import { storage, emailToStorageKey, APPFR_TABLES } from '../src/services/storageService.ts';
+import { storage, emailToStorageKey, APPFR_TABLES, getLocalDateString } from '../src/services/storageService.ts';
 import { audio } from '../src/services/audioService.ts';
 import { UserProfile } from '../src/types.ts';
 import { calculateWordWeight, calculateWordDurations, RsvpPacingMode } from '../src/services/rsvpPacingService.ts';
@@ -306,7 +306,7 @@ describe('Cross-Device Cloud Sync & Storage Engine', () => {
   });
 });
 
-describe('Streak Inactivity Validation', () => {
+describe('Streak Inactivity Validation & Daily Flame Engine (Duolingo/Busuu)', () => {
   it('determines streak continuity correctly', () => {
     const todayStr = '2026-11-02';
     const yesterdayStr = '2026-11-01';
@@ -317,6 +317,145 @@ describe('Streak Inactivity Validation', () => {
 
     const activeTwoDaysAgoContinuity = twoDaysAgoStr === yesterdayStr || twoDaysAgoStr === todayStr;
     assert.strictEqual(activeTwoDaysAgoContinuity, false);
+  });
+
+  it('increments streak when user connects on consecutive days', () => {
+    const todayStr = storage.getTodayDateString();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = getLocalDateString(yesterday);
+
+    const testUser: UserProfile = {
+      id: 'usr_test_streak_consecutive',
+      name: 'Tester',
+      email: 'tester_consecutive@caixa.gov.br',
+      baselineWpm: 200,
+      targetWpm: 300,
+      currentWpm: 220,
+      bestWpm: 250,
+      averageComprehension: 80,
+      streakDays: 1,
+      lastActiveDate: yesterdayStr,
+      totalMinutesTrained: 10,
+      testsCompleted: 1,
+      initialTestCompleted: true,
+      createdAt: yesterdayStr
+    };
+
+    storage.saveUser(testUser);
+    const updated = storage.recordDailyAccess();
+    assert(updated !== null);
+    assert.strictEqual(updated.streakDays, 2, 'Connecting today after connecting yesterday must increment streak to 2');
+    assert.strictEqual(updated.lastActiveDate, todayStr);
+  });
+
+  it('keeps streak intact without duplicate increments on multiple connections same day', () => {
+    const user = storage.getUser();
+    assert(user !== null);
+    const initialStreak = user.streakDays;
+
+    // Conectar novamente no mesmo dia
+    const secondAccess = storage.recordDailyAccess();
+    assert(secondAccess !== null);
+    assert.strictEqual(secondAccess.streakDays, initialStreak, 'Repeated access on the same day must not duplicate streak count');
+  });
+
+  it('resets streak to 0 (flame extinguishes) if user is inactive for more than 1 day', () => {
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    const threeDaysAgoStr = getLocalDateString(threeDaysAgo);
+
+    const inactiveUser: UserProfile = {
+      id: 'usr_test_inactive',
+      name: 'Inativo',
+      email: 'inativo@caixa.gov.br',
+      baselineWpm: 180,
+      targetWpm: 270,
+      currentWpm: 180,
+      bestWpm: 180,
+      averageComprehension: 75,
+      streakDays: 5,
+      lastActiveDate: threeDaysAgoStr,
+      totalMinutesTrained: 30,
+      testsCompleted: 3,
+      initialTestCompleted: true,
+      createdAt: threeDaysAgoStr
+    };
+
+    storage.saveUser(inactiveUser);
+    // getUser() deve identificar inatividade superior a 1 dia e apagar o foguinho (streak = 0)
+    const fetched = storage.getUser();
+    assert(fetched !== null);
+    assert.strictEqual(fetched.streakDays, 0, 'Inactive user for > 1 day must have streak reset to 0 (flame off)');
+
+    // Ao conectar hoje após a quebra, inicia uma nova sequência de 1 dia com o foguinho reacendido
+    const reactivated = storage.recordDailyAccess();
+    assert(reactivated !== null);
+    assert.strictEqual(reactivated.streakDays, 1, 'Re-connecting after streak loss starts new 1-day sequence');
+  });
+
+  it('reconciles streak to day 3 when activity is present across consecutive days', () => {
+    const todayStr = storage.getTodayDateString();
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = getLocalDateString(yesterday);
+
+    const twoDaysAgo = new Date();
+    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+    const twoDaysAgoStr = getLocalDateString(twoDaysAgo);
+
+    const userDay3: UserProfile = {
+      id: 'usr_day3_reconcile',
+      name: 'Usuario Dia 3',
+      email: 'dia3@caixa.gov.br',
+      baselineWpm: 200,
+      targetWpm: 300,
+      currentWpm: 210,
+      bestWpm: 210,
+      averageComprehension: 80,
+      streakDays: 0, // estava zerado pelo bug anterior
+      lastActiveDate: todayStr,
+      totalMinutesTrained: 15,
+      testsCompleted: 2,
+      initialTestCompleted: true,
+      createdAt: twoDaysAgoStr
+    };
+
+    storage.saveUser(userDay3);
+
+    // Salva resultados nas datas de anteontem e ontem para simular o histórico dos 3 dias
+    storage.addResult({
+      userId: userDay3.id,
+      exerciseType: 'metronome',
+      title: 'Treino Dia 1',
+      wpm: 200,
+      comprehensionScore: 80,
+      durationSeconds: 120,
+      date: `${twoDaysAgoStr}T10:00:00Z`
+    });
+
+    storage.addResult({
+      userId: userDay3.id,
+      exerciseType: 'metronome',
+      title: 'Treino Dia 2',
+      wpm: 220,
+      comprehensionScore: 85,
+      durationSeconds: 120,
+      date: `${yesterdayStr}T10:00:00Z`
+    });
+
+    // Reconcilia o acesso de hoje
+    const reconciled = storage.recordDailyAccess();
+    assert(reconciled !== null);
+    assert.strictEqual(reconciled.streakDays, 3, 'User with activity on 3 consecutive days must reconcile to streak of 3');
+  });
+
+  it('generates 7-day weekly history for streak calendar modal', () => {
+    const history = storage.getStreakWeeklyHistory();
+    assert.strictEqual(history.length, 7, 'Weekly history must have exactly 7 days');
+    const todayItem = history[history.length - 1];
+    assert.strictEqual(todayItem.isToday, true, 'Last item must be marked as today');
   });
 });
 

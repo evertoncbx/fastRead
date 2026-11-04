@@ -109,16 +109,17 @@ export interface RemoteSyncResult {
 }
 
 export const storage = {
-  // === USER PROFILE ===
+  // === USER PROFILE & DAILY STREAK ===
   getUser(): UserProfile | null {
     try {
       const data = safeStorage.getItem(USER_KEY);
       if (!data) return null;
       const user = JSON.parse(data) as UserProfile;
 
-      // Se o usuário ficou inativo por mais de 1 dia, reseta a sequência honestamente
+      // Se o usuário ficou inativo por mais de 1 dia (última atividade antes de ontem),
+      // a sequência anterior encerrou e o foguinho apaga (0) até que ele conecte hoje.
       if (user.lastActiveDate) {
-        const todayStr = this.getTodayDateString();
+        const todayStr = getLocalDateString(new Date());
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
         const yesterdayStr = getLocalDateString(yesterday);
@@ -135,6 +136,161 @@ export const storage = {
     } catch {
       return null;
     }
+  },
+
+  /**
+   * Registra o acesso do usuário no dia atual e calcula a sequência (streak / foguinho)
+   * no padrão Duolingo / Busuu:
+   * - Cada dia consecutivo que o usuário conecta e acessa adiciona +1 ao contador.
+   * - Conexões repetidas no mesmo dia não duplicam o contador.
+   * - Se o usuário faltar 1 dia sem conectar, a contagem para e o foguinho apaga (0 dias).
+   * - Ao retornar após a quebra, inicia uma nova sequência (1 dia, foguinho reacende).
+   * - Realiza reconciliação com o histórico de atividades para recuperar sequências
+   *   legítimas caso o usuário tenha treinado nos dias anteriores.
+   */
+  recordDailyAccess(userParam?: UserProfile | null): UserProfile | null {
+    const user = userParam || this.getUser();
+    if (!user) return null;
+
+    const todayStr = getLocalDateString(new Date());
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = getLocalDateString(yesterday);
+
+    // Coleta todas as datas de atividade históricas
+    const activityDates = this.getActivityDates(user);
+    activityDates.add(todayStr);
+
+    // Calcula os dias consecutivos a partir de hoje retroativamente
+    let consecutiveDays = 1;
+    let checkDate = new Date();
+    while (true) {
+      checkDate.setDate(checkDate.getDate() - 1);
+      const checkStr = getLocalDateString(checkDate);
+      if (activityDates.has(checkStr)) {
+        consecutiveDays += 1;
+      } else {
+        break;
+      }
+    }
+
+    let newStreak = user.streakDays || 0;
+
+    if (!user.lastActiveDate) {
+      // Primeiro acesso registrado do usuário
+      newStreak = Math.max(1, consecutiveDays);
+    } else if (user.lastActiveDate === todayStr) {
+      // Já acessou hoje: mantém o valor de hoje ou corrige caso estivesse zerado
+      if (newStreak <= 0) {
+        newStreak = Math.max(1, consecutiveDays);
+      } else if (consecutiveDays > newStreak) {
+        newStreak = consecutiveDays;
+      }
+    } else if (user.lastActiveDate === yesterdayStr) {
+      // Conectou ontem e está conectando hoje: sequência mantida com sucesso! (+1 dia)
+      const base = user.streakDays > 0 ? user.streakDays : 1;
+      newStreak = Math.max(base + 1, consecutiveDays);
+    } else {
+      // lastActiveDate é anterior a ontem
+      // Verifica se houve atividade ontem no histórico de exercícios ou treinos
+      if (activityDates.has(yesterdayStr)) {
+        // Usuário teve atividade ontem (por exemplo, erro de atualização de data anterior)
+        const base = user.streakDays > 0 ? user.streakDays : 1;
+        newStreak = Math.max(base + 1, consecutiveDays);
+      } else {
+        // Faltou ontem! Sequência anterior quebrada (foguinho apagou).
+        // Ao conectar hoje, inicia uma nova sequência de 1 dia com foguinho aceso.
+        newStreak = 1;
+      }
+    }
+
+    const updatedUser: UserProfile = {
+      ...user,
+      streakDays: newStreak,
+      lastActiveDate: todayStr
+    };
+
+    safeStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
+    void this.syncToRemote(updatedUser, this.getResults(), this.getDailyProgress());
+    return updatedUser;
+  },
+
+  /**
+   * Retorna o conjunto de todas as datas (YYYY-MM-DD) em que o usuário realizou
+   * atividades (testes, treinos, progresso diário, criação de conta).
+   */
+  getActivityDates(user?: UserProfile | null): Set<string> {
+    const dates = new Set<string>();
+    const currentUser = user || this.getUser();
+    if (!currentUser) return dates;
+
+    // Data de criação
+    if (currentUser.createdAt) {
+      try {
+        dates.add(currentUser.createdAt.split('T')[0]);
+      } catch {}
+    }
+
+    // Última data ativa registrada
+    if (currentUser.lastActiveDate) {
+      dates.add(currentUser.lastActiveDate);
+    }
+
+    // Datas de exercícios e testes concluídos
+    try {
+      const results = this.getResults();
+      for (const r of results) {
+        if (r.date) {
+          dates.add(r.date.split('T')[0]);
+        }
+      }
+    } catch {}
+
+    // Progresso diário
+    try {
+      const dp = this.getDailyProgress();
+      if (dp && dp.date && (dp.completedSteps.length > 0 || dp.totalMinutes > 0)) {
+        dates.add(dp.date);
+      }
+    } catch {}
+
+    return dates;
+  },
+
+  /**
+   * Retorna os últimos 7 dias com status de atividade para exibição no mini-calendário da sequência.
+   */
+  getStreakWeeklyHistory(user?: UserProfile | null): Array<{
+    date: string;
+    dayLabel: string;
+    dayOfMonth: number;
+    isToday: boolean;
+    hasActivity: boolean;
+  }> {
+    const daysShort = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const currentUser = user || this.getUser();
+    const activityDates = this.getActivityDates(currentUser);
+    const todayStr = getLocalDateString(new Date());
+
+    const history = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = getLocalDateString(d);
+      const isToday = dateStr === todayStr;
+      const hasActivity =
+        activityDates.has(dateStr) || (isToday && !!currentUser && currentUser.streakDays > 0);
+
+      history.push({
+        date: dateStr,
+        dayLabel: daysShort[d.getDay()],
+        dayOfMonth: d.getDate(),
+        isToday,
+        hasActivity
+      });
+    }
+
+    return history;
   },
 
   saveUser(profile: UserProfile): void {
@@ -295,12 +451,12 @@ export const storage = {
     }
   },
 
-  addResult(result: Omit<ExerciseResult, 'id' | 'date'>): ExerciseResult {
+  addResult(result: Omit<ExerciseResult, 'id' | 'date'> & { date?: string }): ExerciseResult {
     const results = this.getResults();
     const newResult: ExerciseResult = {
       ...result,
       id: 'res_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-      date: new Date().toISOString()
+      date: result.date || new Date().toISOString()
     };
 
     results.unshift(newResult);
@@ -341,8 +497,11 @@ export const storage = {
       };
       safeStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
 
+      // Garante sincronização da ofensiva / streak do dia
+      const activeUser = this.recordDailyAccess(updatedUser) || updatedUser;
+
       // Sincronização remota para o banco fr_*
-      void this.syncToRemote(updatedUser, trimmed, this.getDailyProgress());
+      void this.syncToRemote(activeUser, trimmed, this.getDailyProgress());
 
       // Salva o resultado individual na tabela fr_exercise_results
       void this.saveResultToSupabase(newResult, user.email);
@@ -412,30 +571,10 @@ export const storage = {
 
       const user = this.getUser();
       if (user) {
-        const todayStr = this.getTodayDateString();
-        let streak = user.streakDays;
-
-        if (user.lastActiveDate !== todayStr) {
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          const yesterdayStr = getLocalDateString(yesterday);
-
-          if (user.lastActiveDate === yesterdayStr) {
-            streak += 1;
-          } else if (!user.lastActiveDate) {
-            streak = 1;
-          } else {
-            streak = 1;
-          }
-
-          this.updateUserProfile({
-            streakDays: streak,
-            lastActiveDate: todayStr
-          });
-        }
+        const activeUser = this.recordDailyAccess(user) || user;
 
         // PERSISTÊNCIA IMEDIATA DO PROGRESSO DIÁRIO NA NUVEM!
-        void this.saveDailyProgressToRemote(progress, user);
+        void this.saveDailyProgressToRemote(progress, activeUser);
       }
     }
     return progress;
@@ -626,8 +765,11 @@ export const storage = {
             safeStorage.setItem(DAILY_KEY, JSON.stringify(restoredDaily));
           }
 
+          // Registra e reconcilia o acesso diário e streak para a sessão
+          const finalProfile = this.recordDailyAccess(restoredProfile) || restoredProfile;
+
           return {
-            profile: restoredProfile,
+            profile: finalProfile,
             results: resultsList,
             dailyProgress: restoredDaily,
             source: 'supabase'
@@ -649,8 +791,11 @@ export const storage = {
         if (cloudObj.dailyProgress && cloudObj.dailyProgress.date) {
           safeStorage.setItem(DAILY_KEY, JSON.stringify(cloudObj.dailyProgress));
         }
+
+        const finalProfile = this.recordDailyAccess(cloudObj.profile) || cloudObj.profile;
+
         return {
-          profile: cloudObj.profile,
+          profile: finalProfile,
           results: cloudObj.results || [],
           dailyProgress: cloudObj.dailyProgress,
           source: 'cloud'

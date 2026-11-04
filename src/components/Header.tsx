@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { Flame, BookOpen, HelpCircle, Cloud, Check, X, Smartphone, RefreshCw, LogOut, Zap } from 'lucide-react';
+import { BookOpen, HelpCircle, Cloud, RefreshCw, LogOut, Zap, Flame, X } from 'lucide-react';
 import { UserProfile } from '../types';
 import { storage } from '../services/storageService';
+import { StreakBadge } from './StreakBadge';
 
 interface HeaderProps {
   user: UserProfile | null;
   onOpenGuide: () => void;
   onLogout?: () => void;
+  onOpenStreakModal?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ user, onOpenGuide, onLogout }) => {
+export const Header: React.FC<HeaderProps> = ({ user, onOpenGuide, onLogout, onOpenStreakModal }) => {
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string>('');
@@ -60,14 +62,12 @@ export const Header: React.FC<HeaderProps> = ({ user, onOpenGuide, onLogout }) =
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {user && (
               <>
-                {/* Contador de Dias / Streak */}
-                <div
-                  title="Dias Seguidos de Treino"
-                  className="flex items-center gap-1 bg-[#FFF8D9] border-2 border-[#FFE680] border-b-4 border-b-[#E5A500] px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl text-[#B8860B] text-xs sm:text-base font-black shrink-0"
-                >
-                  <Flame className="w-4 h-4 sm:w-5 sm:h-5 fill-[#FF9600] text-[#FF9600]" />
-                  <span>{user.streakDays}</span>
-                </div>
+                {/* Contador de Dias / Streak (Foguinho Aceso vs Apagado) */}
+                <StreakBadge
+                  streakDays={user.streakDays}
+                  size="md"
+                  onClick={onOpenStreakModal}
+                />
 
                 {/* Velocidade Atual */}
                 <div

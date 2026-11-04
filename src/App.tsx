@@ -5,6 +5,7 @@ import { Header } from './components/Header';
 import { BottomNav, NavTab } from './components/BottomNav';
 import { AuthModal } from './components/AuthModal';
 import { StudyGuideModal } from './components/StudyGuideModal';
+import { StreakModal } from './components/StreakModal';
 import { DashboardView } from './components/views/DashboardView';
 import { DailyJourneyView } from './components/views/DailyJourneyView';
 import { ExercisesView } from './components/views/ExercisesView';
@@ -24,6 +25,7 @@ export const App: React.FC = () => {
   const [dailyProgress, setDailyProgress] = useState<DailyProgress>(storage.getDailyProgress());
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
   const [isGuideOpen, setIsGuideOpen] = useState<boolean>(false);
+  const [isStreakModalOpen, setIsStreakModalOpen] = useState<boolean>(false);
   const [sessionServedTitles, setSessionServedTitles] = useState<string[]>([]);
   const [libraryTexts, setLibraryTexts] = useState<ReadingText[]>(READING_LIBRARY);
 
@@ -38,7 +40,8 @@ export const App: React.FC = () => {
 
   // Carregar dados na inicialização
   useEffect(() => {
-    const loadedUser = storage.getUser();
+    // Registra e reconcilia automaticamente o acesso do dia e a ofensiva diária (streak)
+    const loadedUser = storage.recordDailyAccess() || storage.getUser();
     setUser(loadedUser);
     setResults(storage.getResults());
     setDailyProgress(storage.getDailyProgress());
@@ -311,11 +314,24 @@ export const App: React.FC = () => {
       {/* Modal do Guia Rápido */}
       <StudyGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
 
+      {/* Modal da Ofensiva / Sequência Diária (Estilo Duolingo) */}
+      <StreakModal
+        isOpen={isStreakModalOpen}
+        onClose={() => setIsStreakModalOpen(false)}
+        user={user}
+        onStartTraining={() => {
+          setActiveTab('journey');
+          setIsStreakModalOpen(false);
+        }}
+        onStreakUpdated={(updated) => setUser(updated)}
+      />
+
       {/* Header Fixo */}
       <Header
         user={user}
         onOpenGuide={() => setIsGuideOpen(true)}
         onLogout={handleLogout}
+        onOpenStreakModal={() => setIsStreakModalOpen(true)}
       />
 
       {/* Conteúdo Principal */}
@@ -437,6 +453,7 @@ export const App: React.FC = () => {
                   onStartDailyWorkout={() => setActiveTab('journey')}
                   onRetest={handleRetest}
                   onStartStep={handleStartDailyStep}
+                  onOpenStreakModal={() => setIsStreakModalOpen(true)}
                 />
               )}
 
@@ -445,6 +462,7 @@ export const App: React.FC = () => {
                   dailyProgress={dailyProgress}
                   streakDays={user.streakDays}
                   onStartStep={handleStartDailyStep}
+                  onOpenStreakModal={() => setIsStreakModalOpen(true)}
                 />
               )}
 
@@ -464,6 +482,7 @@ export const App: React.FC = () => {
                   user={user}
                   results={results}
                   onRetest={handleRetest}
+                  onOpenStreakModal={() => setIsStreakModalOpen(true)}
                 />
               )}
             </div>

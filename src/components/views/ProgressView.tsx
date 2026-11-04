@@ -6,9 +6,10 @@ interface ProgressViewProps {
   user: UserProfile;
   results: ExerciseResult[];
   onRetest: () => void;
+  onOpenStreakModal?: () => void;
 }
 
-export const ProgressView: React.FC<ProgressViewProps> = ({ user, results, onRetest }) => {
+export const ProgressView: React.FC<ProgressViewProps> = ({ user, results, onRetest, onOpenStreakModal }) => {
   const percentGain = user.baselineWpm > 0
     ? Math.round(((user.currentWpm - user.baselineWpm) / user.baselineWpm) * 100)
     : 0;
@@ -104,13 +105,22 @@ export const ProgressView: React.FC<ProgressViewProps> = ({ user, results, onRet
           <span className="text-xs sm:text-sm font-bold text-stone-400 block">Compreensão Média</span>
         </div>
 
-        <div className="card-duo p-5 space-y-1.5">
-          <div className="flex items-center gap-2 text-[#FF9600] mb-1">
-            <Flame className="w-5 h-5 fill-current" />
+        <div
+          onClick={onOpenStreakModal}
+          className={`card-duo p-5 space-y-1.5 transition-all ${
+            onOpenStreakModal ? 'cursor-pointer hover:brightness-105 active:scale-[0.98]' : ''
+          }`}
+        >
+          <div className={`flex items-center gap-2 mb-1 ${user.streakDays > 0 ? 'text-[#FF9600]' : 'text-stone-400'}`}>
+            <Flame className={`w-5 h-5 ${user.streakDays > 0 ? 'fill-current' : 'fill-stone-200 stroke-[2]'}`} />
             <span className="text-xs sm:text-sm font-black uppercase text-stone-400">Sequência</span>
           </div>
-          <span className="text-3xl sm:text-4xl font-black text-[#131F24] font-mono block">{user.streakDays} dias</span>
-          <span className="text-xs sm:text-sm font-bold text-stone-400 block">Dias Consecutivos</span>
+          <span className={`text-3xl sm:text-4xl font-black font-mono block ${user.streakDays > 0 ? 'text-[#131F24]' : 'text-stone-400'}`}>
+            {user.streakDays} dias
+          </span>
+          <span className="text-xs sm:text-sm font-bold text-stone-400 block">
+            {user.streakDays > 0 ? 'Ofensiva Ativa 🔥' : 'Chama Apagada ❄️'}
+          </span>
         </div>
 
         <div className="card-duo p-5 space-y-1.5">

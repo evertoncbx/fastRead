@@ -2,6 +2,7 @@ import React from 'react';
 import { Play, Flame, Target, Trophy, Clock, Zap, Layers, Eye, Award, CheckCircle2, Shuffle } from 'lucide-react';
 import { UserProfile, DailyProgress, ExerciseType } from '../../types';
 import { NavTab } from '../BottomNav';
+import { StreakBadge } from '../StreakBadge';
 
 interface DashboardViewProps {
   user: UserProfile;
@@ -10,6 +11,7 @@ interface DashboardViewProps {
   onStartDailyWorkout: () => void;
   onRetest: () => void;
   onStartStep?: (stepId: number, exerciseType: ExerciseType) => void;
+  onOpenStreakModal?: () => void;
 }
 
 interface StepInfo {
@@ -76,7 +78,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onNavigate,
   onStartDailyWorkout,
   onRetest,
-  onStartStep
+  onStartStep,
+  onOpenStreakModal
 }) => {
   const percentGain = user.baselineWpm > 0 ? Math.round(((user.currentWpm - user.baselineWpm) / user.baselineWpm) * 100) : 0;
   const progressToTarget = user.baselineWpm > 0 && user.targetWpm > user.baselineWpm
@@ -190,10 +193,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </h3>
           </div>
 
-          <div className="flex items-center gap-1.5 bg-[#FFF8D9] border-2 border-[#FFE680] border-b-4 border-b-[#E5A500] px-4 py-2 rounded-2xl text-[#B8860B] font-black text-base">
-            <Flame className="w-5 h-5 fill-[#FF9600] text-[#FF9600]" />
-            <span>{user.streakDays} dias</span>
-          </div>
+          <StreakBadge
+            streakDays={user.streakDays}
+            size="md"
+            showDaysSuffix={true}
+            onClick={onOpenStreakModal}
+          />
         </div>
 
         {/* Botão Táteis 3D Gigante */}

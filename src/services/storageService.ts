@@ -16,7 +16,12 @@ export const APPFR_TABLES = {
   TEXTS: 'appfr_texts'
 } as const;
 
-export const FR_TABLES = APPFR_TABLES;
+export const FR_TABLES = {
+  PROFILES: 'fr_profiles',
+  RESULTS: 'fr_exercise_results',
+  DAILY: 'fr_daily_progress',
+  TEXTS: 'fr_texts'
+} as const;
 
 // Cache volátil em memória para textos do Supabase (zero impacto no limite do localStorage)
 let remoteTextsCache: any[] | null = null;
@@ -366,22 +371,18 @@ export const storage = {
     } catch {}
   },
 
-  // === BIBLIOTECA REMOTA SUPABASE (appfr.texts / appfr_texts) ===
+  // === BIBLIOTECA REMOTA SUPABASE (appfr.texts / appfr_texts / fr_texts) ===
   async fetchRemoteTexts(): Promise<ReadingText[] | null> {
-    if (!supabase) return null;
+    const enableRemote = getEnvVar('VITE_ENABLE_REMOTE_TEXTS') === 'true';
+    if (!supabase || !enableRemote) return null;
     try {
-      // 1. Tenta carregar de public.appfr_texts
-      let { data, error } = await supabase.from(APPFR_TABLES.TEXTS).select('*');
-
-      // 2. Fallback para schema appfr
-      if ((error || !data || data.length === 0) && typeof (supabase as any).schema === 'function') {
-        try {
-          const schemaRes = await (supabase as any).schema('appfr').from('texts').select('*');
-          if (!schemaRes.error && schemaRes.data && schemaRes.data.length > 0) {
-            data = schemaRes.data;
-            error = null;
-          }
-        } catch {}
+      let { data, error } = await supabase.from(FR_TABLES.TEXTS).select('*');
+      if (error || !data || data.length === 0) {
+        const fallback = await supabase.from(APPFR_TABLES.TEXTS).select('*');
+        if (!fallback.error && fallback.data && fallback.data.length > 0) {
+          data = fallback.data;
+          error = null;
+        }
       }
 
       if (error || !data || data.length === 0) return null;
@@ -433,7 +434,7 @@ export const storage = {
         quiz: text.quiz || []
       };
 
-      const { error } = await supabase.from(APPFR_TABLES.TEXTS).upsert(payload);
+      const { error } = await supabase.from(FR_TABLES.TEXTS).upsert(payload);
       return !error;
     } catch {
       return false;

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, CheckCircle2, ArrowLeft, Timer, Brain, Award, ChevronRight } from 'lucide-react';
+import { Play, CheckCircle2, ArrowLeft, Timer, Brain, Award, ChevronRight, RotateCcw, RotateCw } from 'lucide-react';
 import { ReadingText } from '../../types';
 import { getRandomAssessmentText } from '../../data/texts';
+import { storage } from '../../services/storageService';
 import { audio } from '../../services/audioService';
 import { CountdownOverlay } from './CountdownOverlay';
 import confetti from 'canvas-confetti';
@@ -20,6 +21,7 @@ interface ReadingTestProps {
     textId?: string;
   }) => void;
   onBack?: () => void;
+  onRetest?: () => void;
 }
 
 export const ReadingTest: React.FC<ReadingTestProps> = ({
@@ -28,7 +30,8 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
   baselineWpm = 0,
   recentTitles = [],
   onComplete,
-  onBack
+  onBack,
+  onRetest
 }) => {
   const [text, setText] = useState<ReadingText>(() => {
     if (customText) return customText;
@@ -50,6 +53,7 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
   const timerRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
   const readingDurationRef = useRef<number>(0);
+  const readingContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     return () => {
@@ -60,6 +64,12 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
   useEffect(() => {
     if (customText) {
       setText(customText);
+      setPhase('intro');
+      setElapsedSeconds(0);
+      readingDurationRef.current = 0;
+      setAnswers({});
+      setCurrentQuizIndex(0);
+      setScoreData(null);
     }
   }, [customText]);
 
@@ -73,10 +83,52 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
     setElapsedSeconds(0);
     readingDurationRef.current = 0;
     startTimeRef.current = performance.now();
+    if (readingContainerRef.current) {
+      readingContainerRef.current.scrollTo({ top: 0, behavior: 'auto' });
+    }
     timerRef.current = window.setInterval(() => {
       const now = performance.now();
       setElapsedSeconds((now - startTimeRef.current) / 1000);
     }, 100);
+  };
+
+  const handleRestartReading = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setElapsedSeconds(0);
+    readingDurationRef.current = 0;
+    if (readingContainerRef.current) {
+      readingContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    setShowCountdown(true);
+  };
+
+  const handleShuffleText = () => {
+    if (onRetest) {
+      onRetest();
+    } else {
+      const nextText = getRandomAssessmentText([...recentTitles, text.id, text.title]);
+      storage.addRecentReadText(nextText.id, nextText.title);
+      setText(nextText);
+    }
+  };
+
+  const handleRetakeTest = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setElapsedSeconds(0);
+    readingDurationRef.current = 0;
+    setAnswers({});
+    setCurrentQuizIndex(0);
+    setScoreData(null);
+
+    if (onRetest) {
+      onRetest();
+      return;
+    }
+
+    const nextText = getRandomAssessmentText([...recentTitles, text.id, text.title]);
+    storage.addRecentReadText(nextText.id, nextText.title);
+    setText(nextText);
+    setPhase('intro');
   };
 
   const handleFinishReading = () => {
@@ -156,15 +208,31 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
 
       {/* Top bar */}
       <div className="flex items-center justify-between mb-4">
-        {onBack && phase === 'intro' ? (
-          <button
-            onClick={onBack}
-            className="btn-duo-white py-2 px-3 text-sm flex items-center gap-1.5 cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Voltar</span>
-          </button>
-        ) : <div />}
+        <div className="flex items-center gap-2">
+          {onBack && (
+            <button
+              onClick={() => {
+                if (timerRef.current) clearInterval(timerRef.current);
+                onBack();
+              }}
+              className="btn-duo-white py-2 px-3 text-sm flex items-center gap-1.5 cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Voltar</span>
+            </button>
+          )}
+
+          {phase === 'reading' && (
+            <button
+              onClick={handleRestartReading}
+              className="btn-duo-white py-2 px-3 text-sm flex items-center gap-1.5 cursor-pointer"
+              title="Reiniciar o teste"
+            >
+              <RotateCcw className="w-4 h-4 stroke-[2.5]" />
+              <span>Reiniciar</span>
+            </button>
+          )}
+        </div>
 
         {phase === 'reading' && (
           <div className="flex items-center gap-2 bg-[#D7FFB8] text-[#46A302] border-2 border-[#A8EE69] px-4 py-1.5 rounded-full text-sm font-mono font-black animate-pulse">
@@ -190,10 +258,23 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
 
             {/* Texto Selecionado Automaticamente */}
             <div className="bg-stone-50 p-4 rounded-2xl border-2 border-stone-200 text-left">
-              <strong className="text-lg font-black text-[#131F24] block truncate">{text.title}</strong>
-              <span className="text-xs font-black text-[#46A302] font-mono block mt-1">
-                {text.wordCount} palavras • ~{text.estimatedMinutes} min
-              </span>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <strong className="text-lg font-black text-[#131F24] block truncate">{text.title}</strong>
+                  <span className="text-xs font-black text-[#46A302] font-mono block mt-1">
+                    {text.wordCount} palavras • ~{text.estimatedMinutes} min
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleShuffleText}
+                  title="Trocar por outro texto"
+                  className="btn-duo-white py-1.5 px-3 text-xs font-bold flex items-center gap-1 cursor-pointer shrink-0"
+                >
+                  <RotateCw className="w-3.5 h-3.5" />
+                  <span>Trocar</span>
+                </button>
+              </div>
             </div>
 
             <button
@@ -217,7 +298,10 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
             </div>
 
             {/* Texto com tipografia ampliada e altamente legível */}
-            <div className="text-[#131F24] text-2xl sm:text-3xl leading-[2.1] space-y-5 font-reading max-h-[55vh] overflow-y-auto pr-2 selection:bg-[#58CC02]/25">
+            <div
+              ref={readingContainerRef}
+              className="text-[#131F24] text-2xl sm:text-3xl leading-[2.1] space-y-5 font-reading max-h-[55vh] overflow-y-auto pr-2 selection:bg-[#58CC02]/25"
+            >
               {text.text.split('\n\n').map((paragraph, idx) => (
                 <p key={idx} className="indent-6">
                   {paragraph}
@@ -226,13 +310,23 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={handleFinishReading}
-            className="w-full py-4 px-6 btn-duo-green text-lg font-black flex items-center justify-center gap-2 cursor-pointer shadow-md"
-          >
-            <CheckCircle2 className="w-6 h-6 stroke-[2.5]" />
-            <span>Terminei de Ler! ({elapsedSeconds.toFixed(1)}s)</span>
-          </button>
+          <div className="space-y-3">
+            <button
+              onClick={handleFinishReading}
+              className="w-full py-4 px-6 btn-duo-green text-lg font-black flex items-center justify-center gap-2 cursor-pointer shadow-md"
+            >
+              <CheckCircle2 className="w-6 h-6 stroke-[2.5]" />
+              <span>Terminei de Ler! ({elapsedSeconds.toFixed(1)}s)</span>
+            </button>
+
+            <button
+              onClick={handleRestartReading}
+              className="w-full py-3.5 px-6 btn-duo-white text-base font-black flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <RotateCcw className="w-5 h-5 stroke-[2.5]" />
+              <span>Reiniciar o Teste</span>
+            </button>
+          </div>
         </div>
       )}
 
@@ -354,22 +448,32 @@ export const ReadingTest: React.FC<ReadingTestProps> = ({
               )}
             </div>
 
-            <button
-              onClick={() => {
-                onComplete({
-                  wpm: scoreData.wpm,
-                  comprehensionScore: scoreData.compPercent,
-                  durationSeconds: Math.round(scoreData.elapsedSeconds),
-                  effectiveWpm: scoreData.effectiveWpm,
-                  textTitle: text.title,
-                  textId: text.id
-                });
-              }}
-              className="w-full py-4 px-6 btn-duo-green text-lg font-black flex items-center justify-center gap-2 cursor-pointer shadow-md"
-            >
-              <CheckCircle2 className="w-6 h-6 stroke-[2.5]" />
-              <span>Salvar e Continuar</span>
-            </button>
+            <div className="space-y-3 pt-2">
+              <button
+                onClick={() => {
+                  onComplete({
+                    wpm: scoreData.wpm,
+                    comprehensionScore: scoreData.compPercent,
+                    durationSeconds: Math.round(scoreData.elapsedSeconds),
+                    effectiveWpm: scoreData.effectiveWpm,
+                    textTitle: text.title,
+                    textId: text.id
+                  });
+                }}
+                className="w-full py-4 px-6 btn-duo-green text-lg font-black flex items-center justify-center gap-2 cursor-pointer shadow-md"
+              >
+                <CheckCircle2 className="w-6 h-6 stroke-[2.5]" />
+                <span>Salvar e Continuar</span>
+              </button>
+
+              <button
+                onClick={handleRetakeTest}
+                className="w-full py-3.5 px-6 btn-duo-white text-base sm:text-lg font-black flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <RotateCcw className="w-5 h-5 stroke-[2.5]" />
+                <span>Refazer o Teste</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

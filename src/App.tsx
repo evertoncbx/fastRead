@@ -296,10 +296,13 @@ export const App: React.FC = () => {
     const randomText = getRecommendedTextForUser(user, exclusions, 'assessment', libraryTexts, true);
     storage.addRecentReadText(randomText.id, randomText.title);
     setSessionServedTitles(prev => [randomText.title, ...prev.slice(0, 20)]);
-    setActiveExercise({
+    setActiveExercise(prev => ({
       type: 'assessment',
+      isInitialDiagnostic: prev?.isInitialDiagnostic,
+      isDailyStep: prev?.isDailyStep,
+      dailyStepId: prev?.dailyStepId,
       customText: randomText
-    });
+    }));
   };
 
   return (
@@ -432,12 +435,14 @@ export const App: React.FC = () => {
 
             {activeExercise.type === 'assessment' && (
               <ReadingTest
+                key={activeExercise.customText?.id || 'assessment'}
                 customText={activeExercise.customText}
                 isInitialTest={activeExercise.isInitialDiagnostic}
                 baselineWpm={user?.baselineWpm || 0}
                 recentTitles={getExclusionList()}
                 onBack={() => setActiveExercise(null)}
                 onComplete={handleAssessmentComplete}
+                onRetest={handleRetest}
               />
             )}
           </div>
